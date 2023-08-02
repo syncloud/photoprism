@@ -1,0 +1,48 @@
+apps:
+  web:
+    user: photoprism
+    command: bin/service.web.sh
+    daemon: simple
+    plugs:
+    - network
+    - network-bind
+    restart-condition: always
+
+  postgresql:
+    user: matrix
+    command: bin/service.postgresql.sh
+    daemon: forking
+    plugs:
+      - network
+      - network-bind
+    restart-condition: always
+
+  psql:
+    command: bin/psql.sh
+
+  pgdumpall:
+    command: bin/pg_dumpall.sh
+
+  storage-change:
+    command: bin/cli storage-change
+
+  access-change:
+    command: bin/cli access-change
+
+  backup-pre-stop:
+    command: bin/cli backup-pre-stop
+
+  restore-pre-start:
+    command: bin/cli restore-pre-start
+
+  restore-post-start:
+    command: bin/cli restore-post-start
+
+  sqlite:
+    command: sqlite/bin/sqlite.sh
+
+confinement: strict
+description: Photoprism
+grade: stable
+name: photoprism
+summary: Photoprism
