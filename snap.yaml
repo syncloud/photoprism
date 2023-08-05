@@ -38,9 +38,6 @@ apps:
   restore-post-start:
     command: bin/cli restore-post-start
 
-  sqlite:
-    command: sqlite/bin/sqlite.sh
-
 confinement: strict
 description: Photoprism
 grade: stable
