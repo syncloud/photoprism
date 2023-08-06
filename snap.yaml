@@ -9,7 +9,7 @@ apps:
     restart-condition: always
 
   postgresql:
-    user: matrix
+    user: photoprism
     command: bin/service.postgresql.sh
     daemon: forking
     plugs:
