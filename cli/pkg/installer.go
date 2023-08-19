@@ -14,14 +14,18 @@ const (
 )
 
 type Installer struct {
-	NewVersionFile     string
-	CurrentVersionFile string
+	newVersionFile     string
+	currentVersionFile string
+	configDir          string
+	database           Database
 }
 
 func New() *Installer {
+	configDir := path.Join(DataDir, "config")
 	return &Installer{
-		NewVersionFile:     path.Join(AppDir, "version"),
-		CurrentVersionFile: path.Join(DataDir, "version"),
+		newVersionFile:     path.Join(AppDir, "version"),
+		currentVersionFile: path.Join(DataDir, "version"),
+		configDir:          configDir,
 	}
 }
 
@@ -71,11 +75,11 @@ func (i *Installer) PostRefresh() error {
 }
 
 func (i *Installer) ClearVersion() error {
-	return os.RemoveAll(i.CurrentVersionFile)
+	return os.RemoveAll(i.currentVersionFile)
 }
 
 func (i *Installer) UpdateVersion() error {
-	return cp.Copy(i.NewVersionFile, i.CurrentVersionFile)
+	return cp.Copy(i.newVersionFile, i.currentVersionFile)
 }
 
 func (i *Installer) UpdateConfigs() error {

@@ -19,19 +19,6 @@ local build(arch, test_ui, dind) = [{
                 "echo $DRONE_BUILD_NUMBER > version"
             ]
         },
-         {
-            name: "package postgresql",
-            image: "docker:" + dind,
-            commands: [
-                "./postgresql/build.sh"
-            ],
-            volumes: [
-                {
-                    name: "dockersock",
-                    path: "/var/run"
-                }
-            ]
-        },
         {
             name: "photoprism",
             image: "docker:" + dind,

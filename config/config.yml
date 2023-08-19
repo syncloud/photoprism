@@ -1,10 +1,10 @@
 Debug: false
-DarktableBin: /bin/darktable-cli
-AssetsPath: /srv/photoprism
-CachePath: /srv/photoprism/cache
-OriginalsPath: /srv/photoprism/photos/originals
-ImportPath: /srv/photoprism/photos/import
-TempPath: /srv/photoprism/temp
+DarktableBin: /snap/photoprism/current/photoprism/bin/darktable-cli
+AssetsPath: /snap/photoprism/current/photoprism
+CachePath: /data/photoprism/cache
+OriginalsPath: /data/photoprism/photos/originals
+ImportPath: /data/photoprism/photos/import
+TempPath: /data/photoprism/temp
 HttpServerHost:
 HttpMode: release
 HttpPort: 81
