@@ -2,6 +2,7 @@ package pkg
 
 import (
 	cp "github.com/otiai10/copy"
+	"hooks/pkg/platform"
 	"os"
 	"path"
 )
@@ -44,6 +45,11 @@ func (i *Installer) Install() error {
 	if err != nil {
 		return err
 	}
+
+	err = i.StorageChange()
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -72,6 +78,29 @@ func (i *Installer) PostRefresh() error {
 	}
 	return nil
 
+}
+func (i *Installer) StorageChange() error {
+	storageDir, err := platform.New().InitStorage(App, App)
+	if err != nil {
+		return err
+	}
+	err = os.Mkdir(path.Join(storageDir, "cache"), 0755)
+	if err != nil {
+		return err
+	}
+	err = os.Mkdir(path.Join(storageDir, "photos"), 0755)
+	if err != nil {
+		return err
+	}
+	err = os.Mkdir(path.Join(storageDir, "temp"), 0755)
+	if err != nil {
+		return err
+	}
+	err = Chown(storageDir, App)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func (i *Installer) ClearVersion() error {
