@@ -1,4 +1,4 @@
-Debug: false
+Debug: true
 DarktableBin: /snap/photoprism/current/photoprism/bin/darktable-cli.sh
 AssetsPath: /snap/photoprism/current/photoprism/opt/photoprism/assets
 CachePath: /data/photoprism/cache
