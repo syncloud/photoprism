@@ -1,13 +1,13 @@
 import os
+from os.path import join
+from subprocess import check_output
+
 import pytest
 import requests
-import shutil
-from os.path import join
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
-from subprocess import check_output
+from syncloudlib.http import wait_for_rest
 from syncloudlib.integration.hosts import add_host_alias
 from syncloudlib.integration.installer import local_install
-from syncloudlib.http import wait_for_rest
 
 TMP_DIR = '/tmp/syncloud'
 
@@ -61,7 +61,7 @@ def test_install(app_archive_path, device_host, device_password):
 
 
 def test_index(app_domain):
-    wait_for_rest(requests.session(), "https://{0}".format(app_domain), 200, 100)
+    wait_for_rest(requests.session(), "https://{0}".format(app_domain), 200, 10)
 
 
 def __log_data_dir(device):
