@@ -5,8 +5,8 @@ CachePath: /data/photoprism/cache
 OriginalsPath: /data/photoprism/photos/originals
 ImportPath: /data/photoprism/photos/import
 TempPath: /data/photoprism/temp
-HttpServerHost:
-HttpHost: unix:/var/snap/photoprism/common/web.socket
+#HttpServerHost:
+HttpHost: "unix:/var/snap/photoprism/common/web.socket"
 HttpMode: release
 #HttpPort: 81
 HttpPassword:
