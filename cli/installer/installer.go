@@ -1,8 +1,8 @@
-package pkg
+package installer
 
 import (
 	cp "github.com/otiai10/copy"
-	"hooks/pkg/platform"
+	"hooks/platform"
 	"os"
 	"path"
 )

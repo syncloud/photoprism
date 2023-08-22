@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 	"github.com/spf13/cobra"
-	"hooks/pkg"
+	"hooks/installer"
 	"os"
 )
 
@@ -11,7 +11,7 @@ func main() {
 	var rootCmd = &cobra.Command{
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return pkg.New().PreRefresh()
+			return installer.New().PreRefresh()
 		},
 	}
 

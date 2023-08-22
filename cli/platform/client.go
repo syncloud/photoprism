@@ -1,37 +1,37 @@
 package platform
 
 import (
-	"bytes"
-	"context"
 	"encoding/json"
 	"fmt"
+	"go.uber.org/zap"
+	"hooks/log"
 	"io"
-	"net"
 	"net/http"
 )
 
-type HttpClient struct {
-	client *http.Client
+type HttpClient interface {
+	Post(url, contentType string, body []byte) (resp *http.Response, err error)
 }
 
-func New() *HttpClient {
-	return &HttpClient{
-		client: &http.Client{
-			Transport: &http.Transport{
-				DialContext: func(_ context.Context, _, _ string) (net.Conn, error) {
-					return net.Dial("unix", "/var/snap/platform/common/api.socket")
-				},
-			},
-		},
+type Client struct {
+	client HttpClient
+	logger *zap.Logger
+}
+
+func New() *Client {
+	return &Client{
+		client: NewHttpClient(),
+		logger: log.Logger(),
 	}
 }
 
-func (c *HttpClient) InitStorage(app, user string) (string, error) {
+func (c *Client) InitStorage(app, user string) (string, error) {
 	requestJson, err := json.Marshal(InitStorageRequest{AppName: app, UserName: user})
 	if err != nil {
 		return "", err
 	}
-	resp, err := c.client.Post("http://unix/app/init_storage", "application/json", bytes.NewBuffer(requestJson))
+	c.logger.Info("init storage", zap.String("request", string(requestJson)))
+	resp, err := c.client.Post("http://unix/app/init_storage", "application/json", requestJson)
 	if err != nil {
 		return "", err
 	}
@@ -49,4 +49,3 @@ func (c *HttpClient) InitStorage(app, user string) (string, error) {
 	}
 	return responseJson.Data, nil
 }
-

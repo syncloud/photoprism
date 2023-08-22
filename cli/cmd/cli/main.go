@@ -3,12 +3,13 @@ package main
 import (
 	"fmt"
 	"github.com/spf13/cobra"
-	"hooks/pkg"
+	"hooks/installer"
+	"hooks/log"
 	"os"
 )
 
 func main() {
-	logger := pkg.Logger()
+	logger := log.Logger()
 
 	var cmd = &cobra.Command{
 		Use:          "cli",
@@ -19,7 +20,7 @@ func main() {
 		Use: "storage-change",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			logger.Info("storage-change")
-			return pkg.New().StorageChange()
+			return installer.New().StorageChange()
 		},
 	})
 

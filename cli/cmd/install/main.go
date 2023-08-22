@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 	"github.com/spf13/cobra"
-	"hooks/pkg"
+	"hooks/installer"
 	"os"
 )
 
@@ -12,7 +12,7 @@ func main() {
 		Use:          "install",
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return pkg.New().Install()
+			return installer.New().Install()
 		},
 	}
 
