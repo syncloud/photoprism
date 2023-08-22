@@ -27,7 +27,7 @@ func New() *HttpClient {
 }
 
 func (c *HttpClient) InitStorage(app, user string) (string, error) {
-	requestJson, err := json.Marshal(&InitStorageRequest{AppName: app, UserName: user})
+	requestJson, err := json.Marshal(InitStorageRequest{AppName: app, UserName: user})
 	if err != nil {
 		return "", err
 	}
@@ -49,3 +49,4 @@ func (c *HttpClient) InitStorage(app, user string) (string, error) {
 	}
 	return responseJson.Data, nil
 }
+
