@@ -7,10 +7,11 @@ import (
 	"hooks/log"
 	"io"
 	"net/http"
+	"net/url"
 )
 
 type HttpClient interface {
-	Post(url, contentType string, body []byte) (resp *http.Response, err error)
+	Post(url string, values url.Values) (resp *http.Response, err error)
 }
 
 type Client struct {
@@ -26,12 +27,9 @@ func New() *Client {
 }
 
 func (c *Client) InitStorage(app, user string) (string, error) {
-	requestJson, err := json.Marshal(InitStorageRequest{AppName: app, UserName: user})
-	if err != nil {
-		return "", err
-	}
-	c.logger.Info("init storage", zap.String("request", string(requestJson)))
-	resp, err := c.client.Post("http://unix/app/init_storage", "application/json", requestJson)
+	values := url.Values{"app_name": {app}, "user_name": {user}}
+	c.logger.Info("init storage", zap.String("request", values.Encode()))
+	resp, err := c.client.Post("http://unix/app/init_storage", values)
 	if err != nil {
 		return "", err
 	}

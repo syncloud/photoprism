@@ -6,15 +6,16 @@ import (
 	"hooks/log"
 	"io"
 	"net/http"
+	"net/url"
 	"testing"
 )
 
 type HttpClientStub struct {
-	request string
+	values url.Values
 }
 
-func (h *HttpClientStub) Post(url, contentType string, body []byte) (resp *http.Response, err error) {
-	h.request = string(body)
+func (h *HttpClientStub) Post(url string, values url.Values) (resp *http.Response, err error) {
+	h.values = values
 	return &http.Response{
 		StatusCode: 200,
 		Body: io.NopCloser(bytes.NewReader([]byte(`
@@ -34,7 +35,8 @@ func TestRealHttpClient_Post(t *testing.T) {
 	}
 	storage, err := client.InitStorage("app", "user")
 	assert.NoError(t, err)
-	assert.Equal(t, "/data/app", httpClient.request)
+	assert.Contains(t, httpClient.values.Encode(), "app")
+	assert.Contains(t, httpClient.values.Encode(), "user")
 	assert.Equal(t, "/data/app", storage)
 
 }

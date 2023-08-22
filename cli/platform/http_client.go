@@ -1,10 +1,10 @@
 package platform
 
 import (
-	"bytes"
 	"context"
 	"net"
 	"net/http"
+	"net/url"
 )
 
 type RealHttpClient struct {
@@ -23,6 +23,6 @@ func NewHttpClient() *RealHttpClient {
 	}
 }
 
-func (c *RealHttpClient) Post(url, contentType string, body []byte) (resp *http.Response, err error) {
-	return c.client.Post(url, contentType, bytes.NewBuffer(body))
+func (c *RealHttpClient) Post(url string, values url.Values) (resp *http.Response, err error) {
+	return c.client.PostForm(url, values)
 }
