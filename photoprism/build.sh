@@ -13,4 +13,5 @@ cd ${BUILD_DIR}
 docker export photoprism -o app.tar
 tar xf app.tar
 rm -rf app.tar
+cp ${DIR}/photoprism-develop/photoprism ${BUILD_DIR}/opt/photoprism/bin/photoprism
 cp ${DIR}/photoprism.sh ${BUILD_DIR}/bin/
