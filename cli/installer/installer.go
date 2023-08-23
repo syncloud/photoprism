@@ -96,7 +96,7 @@ func (i *Installer) StorageChange() error {
 //	if err != nil {
 //		return err
 //	}
-	err := Chown(storageDir, App)
+	err = Chown(storageDir, App)
 	if err != nil {
 		return err
 	}
