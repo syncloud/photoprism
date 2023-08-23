@@ -2,6 +2,7 @@
 
 DIR=$( cd "$( dirname "$0" )" && pwd )
 cd ${DIR}
+export DEBIAN_FRONTEND="noninteractive"
 echo 'APT::Acquire::Retries "3";' > /etc/apt/apt.conf.d/80retries
 echo 'APT::Install-Recommends "false";' > /etc/apt/apt.conf.d/80recommends
 echo 'APT::Install-Suggests "false";' > /etc/apt/apt.conf.d/80suggests
