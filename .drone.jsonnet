@@ -21,7 +21,7 @@ local build(arch, test_ui, dind) = [{
         },
         {
             name: "photoprism fork",
-            image: "photoprism/photoprism:" + version,
+            image: "ubuntu:jammy",
             commands: [
                 "./photoprism/build-fork.sh"
             ]
