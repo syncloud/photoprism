@@ -21,10 +21,16 @@ local build(arch, test_ui, dind) = [{
         },
         {
             name: "photoprism fork",
-            image: "ubuntu:jammy",
+            image: "docker:" + dind,
             commands: [
                 "./photoprism/build-fork.sh"
-            ]
+            ],
+             volumes: [
+                 {
+                     name: "dockersock",
+                     path: "/var/run"
+                 }
+             ]
         },
         {
             name: "photoprism",
