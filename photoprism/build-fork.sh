@@ -5,7 +5,7 @@ cd ${DIR}
 apk add git make bash
 git clone https://github.com/cyberb/photoprism.git
 cd photoprism
-#make docker-build
+make docker-build
 #docker compose up
 make terminal
 make dep
