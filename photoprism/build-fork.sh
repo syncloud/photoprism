@@ -2,7 +2,7 @@
 
 DIR=$( cd "$( dirname "$0" )" && pwd )
 cd ${DIR}
-apk add git
+apk add git make
 git clone https://github.com/cyberb/photoprism.git
 cd photoprism
 make docker-build
