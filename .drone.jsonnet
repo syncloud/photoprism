@@ -1,6 +1,6 @@
 local name = "photoprism";
 local browser = "firefox";
-local version = "200719";
+local version = "230719";
 local fork_version = "230715-lunar";
 local nginx = "1.24.0";
 
