@@ -1,14 +1,9 @@
-#!/bin/sh -ex
+#!/bin/bash -ex
 
 DIR=$( cd "$( dirname "$0" )" && pwd )
 cd ${DIR}
-apk add git make bash
-git clone https://github.com/cyberb/photoprism.git
-cd photoprism
-make all install DESTDIR=/opt/photoprism
-#make docker-build
-#docker compose up
-#make terminal
-#make dep
-#make build-js
-#make build-go
+wget --progress=dot:giga https://github.com/cyberb/photoprism/archive/refs/heads/develop.tar.gz
+tar xf develop.tar.gz
+cd photoprism-develop
+make dep-tensorflow
+make build-go
