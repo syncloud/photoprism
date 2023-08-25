@@ -1,6 +1,7 @@
 local name = "photoprism";
 local browser = "firefox";
-local version = "preview";#"230719";
+local version = "200719";
+local fork_version = "230715-lunar-slim";
 local nginx = "1.24.0";
 
 local build(arch, test_ui, dind) = [{
@@ -21,7 +22,7 @@ local build(arch, test_ui, dind) = [{
         },
         {
             name: "photoprism fork",
-            image: "photoprism/develop:230811-lunar",
+            image: "photoprism/develop:" + fork_version,
             commands: [
                 "./photoprism/build-fork.sh"
             ]
