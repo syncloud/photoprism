@@ -4,6 +4,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from subprocess import check_output
 from syncloudlib.integration.hosts import add_host_alias
+from selenium.webdriver.support import expected_conditions as EC
 
 DIR = dirname(__file__)
 TMP_DIR = '/tmp/syncloud/ui'
@@ -48,6 +49,7 @@ def test_upload(selenium):
     file.send_keys(join(DIR, 'images', 'profile.jpeg'))
     # selenium.find_by(By.XPATH, "//form//span[text()='Upload']").click()
     selenium.screenshot('uploaded')
+    selenium.wait_or_screenshot(EC.invisibility_of_element_located((By.XPATH, "//nav//span[text()='Upload']")))
 
 
 def test_folders(selenium):
