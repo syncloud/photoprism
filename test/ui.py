@@ -43,7 +43,7 @@ def test_login(selenium, device_user, device_password):
 def test_upload(selenium):
     selenium.screenshot('upload')
     selenium.find_by(By.XPATH, "//button[@title='Upload']").click()
-    file = selenium.find_by(By.XPATH, "//input[@type='file']")
+    file = selenium.driver.find_element(By.XPATH, "//input[@type='file']")
     selenium.driver.execute_script("arguments[0].removeAttribute('class')", file)
     file.send_keys(join(DIR, 'images', 'profile.jpeg'))
     # selenium.find_by(By.XPATH, "//form//span[text()='Upload']").click()
