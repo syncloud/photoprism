@@ -30,27 +30,27 @@ def test_start(module_setup, app, domain, device_host):
 
 def test_login(selenium, device_user, device_password):
     selenium.open_app()
-    selenium.find_byfind_by_xpath_xpath("//input[@name='username']").send_keys(device_user)
-    password = selenium.find_by_xpath("//input[@name='password']")
+    selenium.find_by(By.XPATH, "//input[@name='username']").send_keys(device_user)
+    password = selenium.find_by(By.XPATH, "//input[@name='password']")
     password.send_keys(device_password)
     selenium.screenshot('login')
     password.send_keys(Keys.RETURN)
     # selenium.find_by_xpath("//span[contains(.,'Sign in')]")
-    selenium.find_by_xpath("//div[@title='Logout']")
+    selenium.find_by(By.XPATH, "//div[@title='Logout']")
     selenium.screenshot('main')
 
 
 def test_upload(selenium):
     selenium.screenshot('upload')
-    selenium.find_by_xpath("//i[contains(.,'cloud-upload')]").click()
-    file = selenium.find_by_xpath("//input[@type='file']")
+    selenium.find_by(By.XPATH, "//i[contains(.,'cloud-upload')]").click()
+    file = selenium.find_by(By.XPATH, "//input[@type='file']")
     selenium.driver.execute_script("arguments[0].removeAttribute('class')", file)
-    selenium.find_by_xpath("//form//span[text()='Upload']").click()
+    selenium.find_by(By.XPATH, "//form//span[text()='Upload']").click()
     selenium.screenshot('uploaded')
 
 
 def test_folders(selenium):
-    selenium.find_by_xpath("//div[@title='Folders']")
+    selenium.find_by(By.XPATH, "//div[@title='Folders']")
     selenium.exists_by(By.XPATH, "//a[contains(@class,'result')]")
     selenium.screenshot('folders')
 
