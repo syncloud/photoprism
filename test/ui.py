@@ -42,7 +42,7 @@ def test_login(selenium, device_user, device_password):
 
 def test_upload(selenium):
     selenium.screenshot('upload')
-    selenium.find_by(By.XPATH, "//i[contains(.,'cloud-upload')]").click()
+    selenium.find_by(By.XPATH, "//i[contains(.,'cloud_upload')]").click()
     file = selenium.find_by(By.XPATH, "//input[@type='file']")
     selenium.driver.execute_script("arguments[0].removeAttribute('class')", file)
     selenium.find_by(By.XPATH, "//form//span[text()='Upload']").click()
