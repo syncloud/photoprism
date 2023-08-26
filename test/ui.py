@@ -30,41 +30,29 @@ def test_start(module_setup, app, domain, device_host):
 
 def test_login(selenium, device_user, device_password):
     selenium.open_app()
-    selenium.find_by_xpath("//input[@name='username']").send_keys(device_user)
+    selenium.find_byfind_by_xpath_xpath("//input[@name='username']").send_keys(device_user)
     password = selenium.find_by_xpath("//input[@name='password']")
     password.send_keys(device_password)
     selenium.screenshot('login')
     password.send_keys(Keys.RETURN)
-    selenium.find_by_xpath("//span[contains(.,'Sign in')]")
+    # selenium.find_by_xpath("//span[contains(.,'Sign in')]")
+    selenium.find_by_xpath("//div[@title='Logout']")
     selenium.screenshot('main')
 
 
 def test_upload(selenium):
-    check_output([
-        'wget',
-        'https://github.com/IDPF/epub3-samples/releases/download/20170606/vertically-scrollable-manga.epub',
-    ])
-    # selenium.find_by_xpath("//input[@name='btn-upload']").send_keys('vertically-scrollable-manga.epub')
-    file = selenium.driver.find_element(By.XPATH, "//input[@name='btn-upload']")
-    file.send_keys('vertically-scrollable-manga.epub')
-    # file.submit()
-    selenium.find_by_xpath("//label[contains(.,'Book Title')]")
-    selenium.screenshot('upload-ready')
-    selenium.find_by_xpath("//button[contains(.,'Save')]").click()
-    selenium.find_by_xpath("//div[contains(.,'Metadata successfully updated')]")
-    selenium.screenshot('upload-saved')
+    selenium.screenshot('upload')
+    selenium.find_by_xpath("//i[contains(.,'cloud-upload')]").click()
+    file = selenium.find_by_xpath("//input[@type='file']")
+    selenium.driver.execute_script("arguments[0].removeAttribute('class')", file)
+    selenium.find_by_xpath("//form//span[text()='Upload']").click()
+    selenium.screenshot('uploaded')
 
 
-def test_cover(selenium):
-    selenium.driver.find_element(By.ID, "edit_book").click()
-    file = selenium.driver.find_element(By.XPATH, "//input[@name='btn-upload-cover']")
-    file.send_keys('profile.jpeg')
-    # file.submit()
-    
-    selenium.screenshot('upload-cover-ready')
-    selenium.find_by_xpath("//button[contains(.,'Save')]").click()
-    selenium.find_by_xpath("//div[contains(.,'Metadata successfully updated')]")
-    selenium.screenshot('upload-cover-saved')
+def test_folders(selenium):
+    selenium.find_by_xpath("//div[@title='Folders']")
+    selenium.exists_by(By.XPATH, "//a[contains(@class,'result')]")
+    selenium.screenshot('folders')
 
 
 def test_teardown(driver):
