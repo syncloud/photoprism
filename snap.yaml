@@ -26,9 +26,6 @@ apps:
   ffmpeg:
     command: photoprism/bin/ffmpeg.sh
 
-  darktable:
-    command: photoprism/bin/darktable-cli.sh
-
 confinement: strict
 description: Photoprism
 grade: stable
