@@ -23,6 +23,12 @@ apps:
   restore-post-start:
     command: bin/cli restore-post-start
 
+  ffmpeg:
+    command: photoprism/bin/ffmpeg.sh
+
+  darktable:
+    command: photoprism/bin/darktable-cli.sh
+
 confinement: strict
 description: Photoprism
 grade: stable

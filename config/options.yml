@@ -1,6 +1,6 @@
 Debug: true
-DarktableBin: /snap/photoprism/current/photoprism/bin/darktable-cli.sh
-FFmpegBin: /snap/photoprism/current/photoprism/bin/ffmpeg.sh
+DarktableBin: snap run photoprism.darktable
+FFmpegBin: snap run photoprism.ffmpeg
 AssetsPath: /snap/photoprism/current/photoprism/opt/photoprism/assets
 CachePath: /data/photoprism/cache
 OriginalsPath: /data/photoprism/photos/originals
