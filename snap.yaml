@@ -23,9 +23,6 @@ apps:
   restore-post-start:
     command: bin/cli restore-post-start
 
-  ffmpeg:
-    command: photoprism/bin/ffmpeg.sh
-
 confinement: strict
 description: Photoprism
 grade: stable
