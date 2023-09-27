@@ -80,7 +80,7 @@ def test_access_change_event(device):
 
 
 def test_ffmpeg(device):
-    device.run_ssh('/snap/photoprism/current/photoprism/bin/ffmpeg.sh > {0}/ffmpeg.log'.format(TMP_DIR))
+    device.run_ssh('/snap/photoprism/current/photoprism/bin/ffmpeg.sh -h > {0}/ffmpeg.log'.format(TMP_DIR))
 
 
 def test_remove(device, app):
