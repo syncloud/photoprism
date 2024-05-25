@@ -1,7 +1,7 @@
 local name = "photoprism";
 local browser = "firefox";
-local version = "230719";
-local fork_version = "230715-lunar";
+local version = "240523";
+local fork_version = "240521-jammy";
 local nginx = "1.24.0";
 
 local build(arch, test_ui, dind) = [{
