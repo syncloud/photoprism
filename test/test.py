@@ -73,7 +73,7 @@ def __log_data_dir(device):
 
 
 def test_webdav(device_user, device_password, app_domain):
-    check_output('curl -k -T profile.jpeg -u {0}:{1} https://{2}/originals/'.format(device_user, device_password, app_domain), shell=True)
+    check_output('curl -f -k -T profile.jpeg -u {0}:{1} https://{2}/originals/'.format(device_user, device_password, app_domain), shell=True)
 
 
 
