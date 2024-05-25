@@ -13,7 +13,7 @@ cd ${BUILD_DIR}
 docker export photoprism -o app.tar
 tar xf app.tar
 rm -rf app.tar
-cp ${DIR}/photoprism-develop/photoprism ${BUILD_DIR}/opt/photoprism/bin/photoprism
+cp ${DIR}/photoprism-fork/photoprism ${BUILD_DIR}/opt/photoprism/bin/photoprism
 cp ${DIR}/photoprism.sh ${BUILD_DIR}/bin/
 cp ${DIR}/darktable-cli.sh ${BUILD_DIR}/bin/
 cp ${DIR}/ffmpeg.sh ${BUILD_DIR}/bin/
