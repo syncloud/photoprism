@@ -71,12 +71,6 @@ def __log_data_dir(device):
     device.run_ssh('ls -la /data/photoprism')
 
 
-
-def test_webdav(device_user, device_password, app_domain):
-    check_output('curl -f -k -T profile.jpeg -u {0}:{1} https://{2}/originals/'.format(device_user, device_password, app_domain), shell=True)
-
-
-
 def test_storage_change_event(device):
     device.run_ssh('snap run photoprism.storage-change > {0}/storage-change.log'.format(TMP_DIR))
 
