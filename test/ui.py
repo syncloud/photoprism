@@ -58,9 +58,9 @@ def test_folders(selenium):
     selenium.screenshot('folders')
 
 
-def test_webdav(device_user, device_password, app_domain):
-    token = device.run_ssh('snap run photoprism.cli auth add -n Sync -s "webdav" test")
-    check_output('curl -f -k -T profile.jpeg -u {0}:{1} https://{2}/originals/'.format(device_user, token, app_domain), shell=True)
+def test_webdav(device_user, device_password, app_domain, device):
+    # token = device.run_ssh('snap run photoprism.cli auth add -n Sync -s "webdav" test')
+    check_output('curl -f -k -T profile.jpeg -u {0}:{1} https://{2}/originals/'.format(device_user, device_password, app_domain), shell=True)
 
 
 def test_teardown(driver):

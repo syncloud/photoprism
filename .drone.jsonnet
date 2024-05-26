@@ -21,6 +21,13 @@ local build(arch, test_ui, dind) = [{
             ]
         },
         {
+            name: "sqlite",
+            image: "keinos/sqlite3:3.38.5",
+            commands: [
+                "./sqlite/build.sh"
+            ]
+        },
+        {
             name: "photoprism fork",
             image: "photoprism/develop:" + fork_version,
             commands: [

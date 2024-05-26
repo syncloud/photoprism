@@ -2,8 +2,11 @@ package installer
 
 import (
 	cp "github.com/otiai10/copy"
-	"hooks/platform"
+	"github.com/syncloud/golib/platform"
+	"go.uber.org/zap"
+	"hooks/log"
 	"os"
+	"os/exec"
 	"path"
 )
 
@@ -18,7 +21,8 @@ type Installer struct {
 	newVersionFile     string
 	currentVersionFile string
 	configDir          string
-	database           Database
+	platformClient     *platform.Client
+	logger             *zap.Logger
 }
 
 func New() *Installer {
@@ -27,6 +31,8 @@ func New() *Installer {
 		newVersionFile:     path.Join(AppDir, "version"),
 		currentVersionFile: path.Join(DataDir, "version"),
 		configDir:          configDir,
+		platformClient:     platform.New(),
+		logger:             log.Logger(),
 	}
 }
 
@@ -72,6 +78,13 @@ func (i *Installer) PostRefresh() error {
 		return err
 	}
 
+	command := exec.Command("snap", "run", "sqlite", "update auth_users set webdav=1 where id > 1;")
+	output, err := command.CombinedOutput()
+	i.logger.Info("sqlite", zap.String("output", string(output)))
+	if err != nil {
+		return err
+	}
+
 	err = i.FixPermissions()
 	if err != nil {
 		return err
@@ -84,18 +97,6 @@ func (i *Installer) StorageChange() error {
 	if err != nil {
 		return err
 	}
-//	err = os.Mkdir(path.Join(storageDir, "cache"), 0755)
-//	if err != nil {
-//		return err
-//	}
-//	err = os.Mkdir(path.Join(storageDir, "photos"), 0755)
-//	if err != nil {
-//		return err
-//	}
-//	err = os.Mkdir(path.Join(storageDir, "temp"), 0755)
-//	if err != nil {
-//		return err
-//	}
 	err = Chown(storageDir, App)
 	if err != nil {
 		return err

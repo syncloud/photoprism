@@ -11,6 +11,9 @@ apps:
   cli:
     command: bin/cli.sh
 
+  sqlite:
+    command: sqlite/bin/sqlite.sh
+
   storage-change:
     command: bin/cli storage-change
 
