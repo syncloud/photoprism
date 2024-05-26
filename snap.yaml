@@ -9,7 +9,7 @@ apps:
     restart-condition: always
 
   cli:
-    command: photoprism/bin/photoprism.sh
+    command: bin/cli.sh
 
   storage-change:
     command: bin/cli storage-change
