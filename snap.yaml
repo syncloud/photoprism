@@ -8,6 +8,12 @@ apps:
     - network-bind
     restart-condition: always
 
+  cli:
+    command: bin/cli.sh
+
+  sqlite:
+    command: bin/sqlite.sh
+
   storage-change:
     command: bin/cli storage-change
 

@@ -7,5 +7,6 @@ export PHOTOPRISM_LDAP_BIND_DN="cn={username},ou=users,dc=syncloud,dc=org"
 export PHOTOPRISM_LDAP_ADMIN_GROUP_DN="cn=syncloud,ou=groups,dc=syncloud,dc=org"
 export PHOTOPRISM_LDAP_ADMIN_GROUP_FILTER="(memberUid={username})"
 export PHOTOPRISM_LDAP_ADMIN_GROUP_ATTRIBUTE="memberUid"
+export PHOTOPRISM_LDAP_DEFAULT_USER_ROLE="visitor"
 rm -rf /var/snap/photoprism/common/web.socket
 exec ${DIR}/photoprism/bin/photoprism.sh --config-path /var/snap/photoprism/current/config start

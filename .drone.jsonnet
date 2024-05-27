@@ -1,7 +1,7 @@
 local name = "photoprism";
 local browser = "firefox";
-local version = "230719";
-local fork_version = "230715-lunar";
+local version = "240523";
+local fork_version = "240521-jammy";
 local nginx = "1.24.0";
 
 local build(arch, test_ui, dind) = [{
@@ -17,7 +17,20 @@ local build(arch, test_ui, dind) = [{
             name: "version",
             image: "debian:buster-slim",
             commands: [
-                "echo $DRONE_BUILD_NUMBER > version"
+                "echo $DRONE_BUILD_NUMBER > version",
+            ]
+        },
+  {
+            name: "sqlite",
+            image: "docker:" + dind,
+            commands: [
+                "./sqlite/build.sh"
+            ],
+            volumes: [
+               {
+                    name: "dockersock",
+                    path: "/var/run"
+                }
             ]
         },
         {

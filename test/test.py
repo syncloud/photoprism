@@ -1,7 +1,7 @@
 import os
 from os.path import join
 from subprocess import check_output
-
+import time
 import pytest
 import requests
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
@@ -29,7 +29,7 @@ def module_setup(request, device, app_dir, artifact_dir):
         device.run_ssh('ls -la /var/snap/photoprism > {0}/var.snap.photoprism.ls.log'.format(TMP_DIR), throw=False)
         device.run_ssh('ls -la /var/snap/photoprism/current/ > {0}/var.snap.photoprism.current.ls.log'.format(TMP_DIR),
                        throw=False)
-        device.run_ssh('snap run photoprism.sqlite /var/snap/photoprism/current/app.db .dump > {0}/app.test.db.dump.log'.format(TMP_DIR),
+        device.run_ssh('snap run photoprism.sqlite .dump > {0}/app.test.db.dump.log'.format(TMP_DIR),
                        throw=False)
         device.run_ssh('ls -la /var/snap/photoprism/common > {0}/var.snap.photoprism.common.ls.log'.format(TMP_DIR),
                        throw=False)
@@ -88,15 +88,13 @@ def test_remove(device, app):
     assert response.status_code == 200, response.text
 
 
-def test_reinstall(app_archive_path, device_host, device_password):
+def test_reinstall(app_archive_path, device_host, device_password, app_domain):
     local_install(device_host, device_password, app_archive_path)
+    wait_for_rest(requests.session(), "https://{0}".format(app_domain), 200, 10)
 
 
-def test_upgrade(app_archive_path, device_host, device_password):
+def test_upgrade(app_archive_path, device_host, device_password, app_domain):
     local_install(device_host, device_password, app_archive_path)
-
-
-def test_index_after_upgrade(app_domain):
     wait_for_rest(requests.session(), "https://{0}".format(app_domain), 200, 10)
 
 
