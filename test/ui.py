@@ -79,6 +79,3 @@ def test_webdav(device_user, device_password, app_domain, selenium):
     selenium.find_by(By.XPATH, "//h3[@title='generated-big.png']").click()
     selenium.screenshot('webdav-upload')
 
-
-def test_teardown(driver):
-    driver.quit()
