@@ -17,15 +17,15 @@ local build(arch, test_ui, dind) = [{
             name: "version",
             image: "debian:buster-slim",
             commands: [
-                "echo $DRONE_BUILD_NUMBER > version"
+                "echo $DRONE_BUILD_NUMBER > version",
+                "mkdir -p build",
+                "chmod 777 build",
             ]
         },
         {
             name: "sqlite",
             image: "keinos/sqlite3:3.38.5",
             commands: [
-                "mkdir -p build",
-                "chmod 777 build",
                 "./sqlite/build.sh"
             ]
         },
