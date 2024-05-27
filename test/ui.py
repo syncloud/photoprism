@@ -59,7 +59,6 @@ def test_folders(selenium):
 
 
 def test_webdav(device_user, device_password, app_domain, selenium):
-    # token = device.run_ssh('snap run photoprism.cli auth add -n Sync -s "webdav" test')
     check_output('curl -f -k -T images/generated-big.png -u {0}:{1} https://{2}/originals/'.format(device_user, device_password, app_domain), shell=True)
     selenium.open_app()
     selenium.screenshot('webdav')
@@ -68,6 +67,11 @@ def test_webdav(device_user, device_password, app_domain, selenium):
     selenium.screenshot('webdav-profile')
     selenium.find_by(By.XPATH, "//span[contains(., 'WebDAV clients can connect')]").click()
     selenium.screenshot('webdav-connect')
+    selenium.driver.send_keys(Keys.ESCAPE)
+    selenium.find_by(By.XPATH, "//div[contains(@class, 'nav-library')]/..//i[text()='keyboard_arrow_down']").click()
+    selenium.find_by(By.XPATH, "//span[text()= 'Originals']").click()
+    selenium.find_by(By.XPATH, "//h3[@title= 'generated-big.png']").click()
+    selenium.screenshot('webdav-upload')
 
 
 def test_teardown(driver):
