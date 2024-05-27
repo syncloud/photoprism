@@ -1,5 +1,6 @@
 import pytest
 from os.path import dirname, join
+from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from subprocess import check_output
@@ -67,7 +68,7 @@ def test_webdav(device_user, device_password, app_domain, selenium):
     selenium.screenshot('webdav-profile')
     selenium.find_by(By.XPATH, "//span[contains(., 'WebDAV clients can connect')]").click()
     selenium.screenshot('webdav-connect')
-    selenium.driver.send_keys(Keys.ESCAPE)
+    webdriver.ActionChains(selenium.driver).send_keys(Keys.ESCAPE).perform()
     selenium.find_by(By.XPATH, "//div[contains(@class, 'nav-library')]/..//i[text()='keyboard_arrow_down']").click()
     selenium.find_by(By.XPATH, "//span[text()= 'Originals']").click()
     selenium.find_by(By.XPATH, "//h3[@title= 'generated-big.png']").click()
