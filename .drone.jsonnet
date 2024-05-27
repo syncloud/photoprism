@@ -24,6 +24,8 @@ local build(arch, test_ui, dind) = [{
             name: "sqlite",
             image: "keinos/sqlite3:3.38.5",
             commands: [
+                "mkdir -p build",
+                "chmod 777 build",
                 "./sqlite/build.sh"
             ]
         },
