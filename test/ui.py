@@ -64,8 +64,10 @@ def test_webdav(device_user, device_password, app_domain, selenium):
     selenium.open_app()
     selenium.screenshot('webdav')
     selenium.find_by(By.CSS_SELECTOR, ".p-profile").click()
-    selenium.find_by(By.XPATH, "//span[contains(., 'Connect via WebDAV']").click()
-    selenium.find_by(By.XPATH, "//span[contains(., 'WebDAV clients can connect']").click()
+    selenium.find_by(By.XPATH, "//button[contains(@class, 'action-webdav-dialog')]//span[text()='Connect via WebDAV']").click()
+    selenium.screenshot('webdav-profile')
+    selenium.find_by(By.XPATH, "//span[contains(., 'WebDAV clients can connect')]").click()
+    selenium.screenshot('webdav-connect')
 
 
 def test_teardown(driver):
