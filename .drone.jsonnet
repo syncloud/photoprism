@@ -18,15 +18,19 @@ local build(arch, test_ui, dind) = [{
             image: "debian:buster-slim",
             commands: [
                 "echo $DRONE_BUILD_NUMBER > version",
-                "mkdir -p build",
-                "chmod 777 build",
             ]
         },
-        {
+  {
             name: "sqlite",
-            image: "keinos/sqlite3:3.38.5",
+            image: "docker:" + dind,
             commands: [
                 "./sqlite/build.sh"
+            ],
+            volumes: [
+               {
+                    name: "dockersock",
+                    path: "/var/run"
+                }
             ]
         },
         {

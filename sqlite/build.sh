@@ -4,9 +4,15 @@ DIR=$( cd "$( dirname "$0" )" && pwd )
 cd ${DIR}
 
 BUILD_DIR=${DIR}/../build/snap/sqlite
-ls -la ${DIR}/../
+while ! docker version ; do
+  echo "waiting for docker"
+  sleep 1
+done
+docker create --name=sqlite keinos/sqlite3:3.38.5
 mkdir -p ${BUILD_DIR}
-cp -r /lib ${BUILD_DIR}
-cp -r /usr ${BUILD_DIR}
-mkdir ${BUILD_DIR}/bin
-cp ${DIR}/sqlite.sh ${BUILD_DIR}/bin
+cd ${BUILD_DIR}
+docker export sqlite -o sqlite.tar
+tar xf sqlite.tar
+rm -rf sqlite.tar
+cp ${DIR}/sqlite.sh ${BUILD_DIR}/bin/
+ls -la ${BUILD_DIR}/bin
