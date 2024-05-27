@@ -60,13 +60,6 @@ func (i *Installer) Install() error {
 }
 
 func (i *Installer) Configure() error {
- command := exec.Command("snap", "run", "photoprism.sqlite", "update auth_users set webdav=1 where id > 1;")
-	output, err := command.CombinedOutput()
-	i.logger.Info("sqlite", zap.String("output", string(output)))
-	if err != nil {
-		return err
-	}
-
 	return i.UpdateVersion()
 }
 
@@ -85,6 +78,12 @@ func (i *Installer) PostRefresh() error {
 		return err
 	}
 
+	command := exec.Command("snap", "run", "photoprism.sqlite", "update auth_users set webdav=1 where id > 1;")
+	output, err := command.CombinedOutput()
+	i.logger.Info("sqlite", zap.String("output", string(output)))
+	if err != nil {
+		return err
+	}
 
 	err = i.FixPermissions()
 	if err != nil {
