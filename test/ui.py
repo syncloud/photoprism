@@ -17,7 +17,8 @@ def module_setup(request, device, artifact_dir, ui_mode):
         device.activated()
         device.run_ssh('mkdir -p {0}'.format(TMP_DIR), throw=False)
         device.run_ssh('journalctl > {0}/journalctl.ui.{1}.log'.format(TMP_DIR, ui_mode), throw=False)
-        device.run_ssh('snap run photoprism.sqlite /var/snap/photoprism/current/app.db .dump > {0}/app.ui.db.dump.log'.format(TMP_DIR),
+
+        device.run_ssh('snap run photoprism.sqlite .dump > {0}/app.ui.db.dump.log'.format(TMP_DIR),
                        throw=False)
         device.scp_from_device('{0}/*'.format(TMP_DIR), join(artifact_dir, 'log'))
         check_output('cp /videos/* {0}'.format(artifact_dir), shell=True)
@@ -70,6 +71,10 @@ def test_webdav(device_user, device_password, app_domain, selenium):
     selenium.screenshot('webdav-connect')
     webdriver.ActionChains(selenium.driver).send_keys(Keys.ESCAPE).perform()
     selenium.find_by(By.XPATH, "//div[contains(@class, 'nav-expand')]").click()
+    selenium.find_by(By.XPATH, "//span[text()= 'Library']").click()
+    selenium.find_by(By.XPATH, "//span[text()= 'Start']").click()
+    selenium.clickable_by(By.XPATH, "//span[text()= 'Cancel']")
+    selenium.clickable_by(By.XPATH, "//span[text()= 'Start']")
     selenium.find_by(By.XPATH, "//div[contains(@class, 'nav-library')]/..//i[text()='keyboard_arrow_down']").click()
     selenium.find_by(By.XPATH, "//span[text()= 'Originals']").click()
     selenium.find_by(By.XPATH, "//h3[@title= 'generated-big.png']").click()
