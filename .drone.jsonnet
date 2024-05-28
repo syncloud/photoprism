@@ -3,6 +3,7 @@ local browser = "firefox";
 local version = "240523";
 local fork_version = "240521-jammy";
 local nginx = "1.24.0";
+local deployer = 'https://github.com/syncloud/store/releases/download/4/syncloud-release';
 
 local build(arch, test_ui, dind) = [{
     kind: "pipeline",
