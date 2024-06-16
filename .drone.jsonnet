@@ -24,7 +24,7 @@ local build(arch, test_ui, dind) = [{
         },
   {
             name: "mariadb",
-            image: "mariadb:10.5.12",
+            image: "linuxserver/mariadb:10.5.16-alpine",
             commands: [
                 "./mariadb/build.sh"
             ],
