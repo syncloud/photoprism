@@ -8,11 +8,20 @@ apps:
     - network-bind
     restart-condition: always
 
+  mariadb:
+    user: photoprism
+    command: bin/service.mariadb.sh
+    daemon: simple
+    plugs:
+    - network
+    - network-bind
+    restart-condition: always
+
   cli:
     command: bin/cli.sh
 
-  sqlite:
-    command: bin/sqlite.sh
+  sql:
+    command: bin/sql.sh
 
   storage-change:
     command: bin/cli storage-change
