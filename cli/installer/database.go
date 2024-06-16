@@ -68,19 +68,11 @@ func (d *Database) Init() error {
 }
 
 func (d *Database) Execute(sql string) error {
-	return d.executor.Run(
-		fmt.Sprintf("%s/bin/sql.sh", d.appDir),
-		fmt.Sprintf("-e '%s'", sql),
-	)
+	return d.executor.Run(fmt.Sprintf("%s/bin/sql.sh", d.appDir), "--execute", sql)
 }
 
 func (d *Database) Restore() error {
-	return d.executor.Run(
-		fmt.Sprintf("%s/mariadb/usr/bin/mariadb", d.appDir),
-		fmt.Sprintf("--user %s", App),
-		fmt.Sprintf("--password %s", App),
-		fmt.Sprintf("--execute 'source %s'", d.backupFile),
-	)
+	return d.Execute(fmt.Sprintf("source %s", d.backupFile))
 }
 
 func (d *Database) Backup() error {
@@ -91,7 +83,6 @@ func (d *Database) Backup() error {
 		"--lock-tables",
 		fmt.Sprintf("--databases=%s", App),
 		fmt.Sprintf("--result-file=%s", d.backupFile),
-		"run", "peertube.pgdumpall",
 		"-f", d.backupFile,
 	)
 }
