@@ -3,6 +3,7 @@ local browser = "firefox";
 local version = "240523";
 local fork_version = "240521-jammy";
 local nginx = "1.24.0";
+local platform = '22.02';
 local deployer = 'https://github.com/syncloud/store/releases/download/4/syncloud-release';
 
 local build(arch, test_ui, dind) = [{
@@ -22,17 +23,18 @@ local build(arch, test_ui, dind) = [{
             ]
         },
   {
-            name: "sqlite",
-            image: "docker:" + dind,
+            name: "mariadb",
+            image: "mariadb:10.5.12",
             commands: [
-                "./sqlite/build.sh"
+                "./mariadb/build.sh"
             ],
-            volumes: [
-               {
-                    name: "dockersock",
-                    path: "/var/run"
-                }
-            ]
+        },
+	{
+            name: "mariadb test",
+            image: 'syncloud/platform-buster-' + arch + ':' + platform,
+            commands: [
+                "./mariadb/test.sh"
+            ],
         },
         {
             name: "photoprism fork",
