@@ -78,9 +78,9 @@ func (d *Database) Restore() error {
 func (d *Database) Backup() error {
 	return d.executor.Run(
 		fmt.Sprintf("%s/mariadb/usr/bin/mariadb-dump", d.appDir),
-		fmt.Sprintf("--user=%s", App),
-		fmt.Sprintf("--password=%s", App),
-		"--lock-tables",
+		fmt.Sprintf("--socket=%s/mysql.sock", d.dataDir),
+		"--single-transaction",
+		"--quick",
 		fmt.Sprintf("--databases=%s", App),
 		fmt.Sprintf("--result-file=%s", d.backupFile),
 		"-f", d.backupFile,
