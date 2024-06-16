@@ -5,5 +5,6 @@ cd ${DIR}
 
 BUILD_DIR=${DIR}/../build/snap/mariadb
 ${BUILD_DIR}/usr/bin/mysqld --help
+${BUILD_DIR}/usr/bin/mysql --help
 
 

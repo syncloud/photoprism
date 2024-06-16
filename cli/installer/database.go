@@ -70,16 +70,16 @@ func (d *Database) Init() error {
 func (d *Database) Execute(sql string) error {
 	return d.executor.Run(
 		fmt.Sprintf("%s/bin/sql.sh", d.appDir),
-		fmt.Sprintf("-e=%s", sql),
+		fmt.Sprintf("-e '%s'", sql),
 	)
 }
 
 func (d *Database) Restore() error {
 	return d.executor.Run(
 		fmt.Sprintf("%s/mariadb/usr/bin/mariadb", d.appDir),
-		fmt.Sprintf("--user=%s", App),
-		fmt.Sprintf("--password=%s", App),
-		fmt.Sprintf("--execute='source %s'", d.backupFile),
+		fmt.Sprintf("--user %s", App),
+		fmt.Sprintf("--password %s", App),
+		fmt.Sprintf("--execute 'source %s'", d.backupFile),
 	)
 }
 
