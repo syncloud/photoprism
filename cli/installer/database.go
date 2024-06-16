@@ -69,7 +69,7 @@ func (d *Database) Init() error {
 
 func (d *Database) Execute(sql string) error {
 	return d.executor.Run(
-		fmt.Sprintf("%s/sql", d.appDir),
+		fmt.Sprintf("%s/bin/sql.sh", d.appDir),
 		fmt.Sprintf("-e=%s", sql),
 	)
 }

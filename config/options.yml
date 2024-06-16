@@ -11,7 +11,10 @@ HttpHost: "unix:/var/snap/photoprism/common/web.socket"
 HttpMode: release
 #HttpPort: 81
 HttpPassword:
-DatabaseDriver: sqlite
-DatabaseDsn: .photoprism.db
+DatabaseDriver: mysql
+DatabaseServer: /var/snap/photoprism/current/mysql.sock
+DatabaseName: photoprism
+DatabaseUser: photoprism
+DatabasePassword: photoprism
 Theme: lavendel
 Language: english
