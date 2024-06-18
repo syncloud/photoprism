@@ -83,7 +83,6 @@ func (d *Database) Backup() error {
 		"--quick",
 		fmt.Sprintf("--databases=%s", App),
 		fmt.Sprintf("--result-file=%s", d.backupFile),
-		"-f", d.backupFile,
 	)
 }
 
