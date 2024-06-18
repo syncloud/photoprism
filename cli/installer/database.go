@@ -72,12 +72,11 @@ func (d *Database) Execute(sql string) error {
 }
 
 func (d *Database) Restore() error {
-	_, err := os.Stat(d.backupFile)
-	if os.IsExist(err) {
-		return d.Execute(fmt.Sprintf("source %s", d.backupFile))
+	if _, err := os.Stat(d.backupFile); errors.Is(err, os.ErrNotExist) {
+		d.logger.Warn("backup file does not exist", zap.String("file", d.backupFile))
+		return nil
 	}
-	d.logger.Warn("backup file does not exist", zap.String("file", d.backupFile))
-	return nil
+	return d.Execute(fmt.Sprintf("source %s", d.backupFile))
 }
 
 func (d *Database) Backup() error {
