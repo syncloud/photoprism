@@ -72,14 +72,19 @@ func (d *Database) Execute(sql string) error {
 }
 
 func (d *Database) Restore() error {
-	return d.Execute(fmt.Sprintf("source %s", d.backupFile))
+	_, err := os.Stat(d.backupFile)
+	if os.IsExist(err) {
+		return d.Execute(fmt.Sprintf("source %s", d.backupFile))
+	}
+	d.logger.Warn("backup file does not exist", zap.String("file", d.backupFile))
+	return nil
 }
 
 func (d *Database) Backup() error {
 	return d.executor.Run(
-	 	fmt.Sprintf("%s/mariadb/usr/bin/mariadb-dump", d.appDir),
-	 App,
- 	fmt.Sprintf("--socket=%s/mysql.sock", d.dataDir),
+		fmt.Sprintf("%s/mariadb/usr/bin/mariadb-dump", d.appDir),
+		App,
+		fmt.Sprintf("--socket=%s/mysql.sock", d.dataDir),
 		"--single-transaction",
 		"--quick",
 		fmt.Sprintf("--result-file=%s", d.backupFile),
