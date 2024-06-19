@@ -51,7 +51,8 @@ func (d *Database) Remove() error {
 		_ = os.RemoveAll(d.oldSqliteFile)
 	} else {
 		if _, err := os.Stat(d.backupFile); errors.Is(err, os.ErrNotExist) {
-			return fmt.Errorf("backup file does not exist: %s", d.backupFile)
+			d.logger.Error("backup file does not exist", zap.String("file", d.backupFile))
+			return err
 		}
 	}
 	_ = os.RemoveAll(d.databaseDir)
@@ -113,6 +114,9 @@ func (d *Database) createDb() error {
 }
 
 func (d *Database) isSqlite() bool {
-	_, err := os.Stat(d.oldSqliteFile)
-	return os.IsExist(err)
+	if _, err := os.Stat(d.oldSqliteFile); err == nil {
+		return true
+	}
+	d.logger.Info("sqlite db does not exist", zap.String("file", d.oldSqliteFile))
+	return false
 }
