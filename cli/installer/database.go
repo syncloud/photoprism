@@ -10,14 +10,15 @@ import (
 )
 
 type Database struct {
-	appDir      string
-	dataDir     string
-	configPath  string
-	user        string
-	backupFile  string
-	databaseDir string
-	executor    *Executor
-	logger      *zap.Logger
+	appDir        string
+	dataDir       string
+	configPath    string
+	user          string
+	backupFile    string
+	databaseDir   string
+	oldSqliteFile string
+	executor      *Executor
+	logger        *zap.Logger
 }
 
 func NewDatabase(
@@ -29,14 +30,15 @@ func NewDatabase(
 	logger *zap.Logger,
 ) *Database {
 	return &Database{
-		appDir:      appDir,
-		dataDir:     dataDir,
-		configPath:  configPath,
-		user:        user,
-		backupFile:  path.Join(dataDir, "database.dump"),
-		databaseDir: path.Join(dataDir, "database"),
-		executor:    executor,
-		logger:      logger,
+		appDir:        appDir,
+		dataDir:       dataDir,
+		configPath:    configPath,
+		user:          user,
+		backupFile:    path.Join(dataDir, "database.dump"),
+		databaseDir:   path.Join(dataDir, "database"),
+		oldSqliteFile: path.Join(dataDir, ".photoprism.db"),
+		executor:      executor,
+		logger:        logger,
 	}
 }
 
@@ -45,8 +47,12 @@ func (d *Database) DatabaseDir() string {
 }
 
 func (d *Database) Remove() error {
-	if _, err := os.Stat(d.backupFile); errors.Is(err, os.ErrNotExist) {
-		return fmt.Errorf("backup file does not exist: %s", d.backupFile)
+	if d.isSqlite() {
+		_ = os.RemoveAll(d.oldSqliteFile)
+	} else {
+		if _, err := os.Stat(d.backupFile); errors.Is(err, os.ErrNotExist) {
+			return fmt.Errorf("backup file does not exist: %s", d.backupFile)
+		}
 	}
 	_ = os.RemoveAll(d.databaseDir)
 	return nil
@@ -104,4 +110,9 @@ func (d *Database) createDb() error {
 		return err
 	}
 	return nil
+}
+
+func (d *Database) isSqlite() bool {
+	_, err := os.Stat(d.oldSqliteFile)
+	return os.IsExist(err)
 }
