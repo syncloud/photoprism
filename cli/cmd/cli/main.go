@@ -33,22 +33,25 @@ func main() {
 
 	cmd.AddCommand(&cobra.Command{
 		Use: "backup-pre-stop",
-		Run: func(cmd *cobra.Command, args []string) {
-			logger.Warn("backup-pre-stop is not implemented yet")
+		RunE: func(cmd *cobra.Command, args []string) error {
+			logger.Info("backup-pre-stop")
+			return installer.New().BackupPreStop()
 		},
 	})
 
 	cmd.AddCommand(&cobra.Command{
 		Use: "restore-pre-start",
-		Run: func(cmd *cobra.Command, args []string) {
-			logger.Warn("restore-pre-start is not implemented yet")
+		RunE: func(cmd *cobra.Command, args []string) error {
+			logger.Info("restore-pre-start")
+			return installer.New().RestorePreStart()
 		},
 	})
 
 	cmd.AddCommand(&cobra.Command{
 		Use: "restore-post-start",
-		Run: func(cmd *cobra.Command, args []string) {
-			logger.Warn("restore-post-start is not implemented yet")
+		RunE: func(cmd *cobra.Command, args []string) error {
+			logger.Info("restore-post-start")
+			return installer.New().RestorePostStart()
 		},
 	})
 
