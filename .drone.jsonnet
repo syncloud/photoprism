@@ -57,7 +57,7 @@ local build(arch, test_ui, dind) = [{
             ]
         },
         {
-            name: "photoprism",
+            name: "photoprism test",
             image: 'syncloud/platform-buster-' + arch + ':' + platform,
             commands: [
                 "./photoprism/test.sh"
