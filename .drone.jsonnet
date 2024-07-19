@@ -3,7 +3,7 @@ local browser = "firefox";
 local version = "240523";
 local fork_version = "240521-jammy";
 local nginx = "1.24.0";
-local platform = '22.02';
+local platform = '24.05';
 local deployer = 'https://github.com/syncloud/store/releases/download/4/syncloud-release';
 
 local build(arch, test_ui, dind) = [{
@@ -237,7 +237,7 @@ local build(arch, test_ui, dind) = [{
         },
         {
             name: name + ".buster.com",
-            image: "syncloud/platform-buster-" + arch + ":22.02",
+            image: "syncloud/platform-buster-" + arch + ":" + platform,
             privileged: true,
             volumes: [
                 {
