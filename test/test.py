@@ -83,6 +83,10 @@ def test_ffmpeg(device):
     device.run_ssh('/snap/photoprism/current/photoprism/bin/ffmpeg.sh -h > {0}/ffmpeg.log'.format(TMP_DIR))
 
 
+def test_darktable(device):
+    device.run_ssh('/snap/photoprism/current/photoprism/bin/darktable-cli.sh -v'.format(TMP_DIR))
+
+
 def test_remove(device, app):
     response = device.app_remove(app)
     assert response.status_code == 200, response.text
