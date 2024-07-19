@@ -57,6 +57,19 @@ local build(arch, test_ui, dind) = [{
             ]
         },
         {
+            name: "photoprism",
+            image: 'syncloud/platform-buster-' + arch + ':' + platform,
+            commands: [
+                "./photoprism/test.sh"
+            ],
+            volumes: [
+                {
+                    name: "dockersock",
+                    path: "/var/run"
+                }
+            ]
+        },
+        {
             name: "cli",
             image: "golang:1.20",
             commands: [
