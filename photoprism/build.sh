@@ -14,6 +14,5 @@ cp -r /opt ${BUILD_DIR}
 #cp -r /lib64 ${BUILD_DIR} || true
 
 cp -r ${DIR}/bin/* ${BUILD_DIR}/bin
-cd ${BUILD_DIR}
-ln -s lib/*-linux*/ld-*.so* ld.so
+cp lib/*-linux*/ld-*.so* ${BUILD_DIR}/ld.so
 ls -la
