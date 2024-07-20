@@ -4,18 +4,16 @@ DIR=$( cd "$( dirname "$0" )" && pwd )
 cd ${DIR}
 VERSION=$1
 BUILD_DIR=${DIR}/../build/snap/photoprism
-while ! docker create --name=photoprism photoprism/photoprism:$VERSION ; do
-  sleep 1
-  echo "retry docker"
-done
 mkdir -p ${BUILD_DIR}
 cd ${BUILD_DIR}
-docker export photoprism -o app.tar
-tar xf app.tar
-rm -rf app.tar
-cp ${DIR}/photoprism-fork/photoprism ${BUILD_DIR}/opt/photoprism/bin/photoprism
+
+cp -r /bin ${BUILD_DIR}
+cp -r /usr ${BUILD_DIR}
+cp -r /lib ${BUILD_DIR}
+#cp -r /lib64 ${BUILD_DIR} || true
+
 cp ${DIR}/photoprism.sh ${BUILD_DIR}/bin/
 cp ${DIR}/darktable-cli.sh ${BUILD_DIR}/bin/
 cp ${DIR}/ffmpeg.sh ${BUILD_DIR}/bin/
-cd ${BUILD_DIR}/usr/lib
-ln -s ../share share
+cd ${BUILD_DIR}
+ln -s lib/*-linux*/ld-*.so* ld.so
