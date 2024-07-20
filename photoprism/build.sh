@@ -17,4 +17,5 @@ cp ${DIR}/photoprism-fork/photoprism ${BUILD_DIR}/opt/photoprism/bin/photoprism
 cp ${DIR}/photoprism.sh ${BUILD_DIR}/bin/
 cp ${DIR}/darktable-cli.sh ${BUILD_DIR}/bin/
 cp ${DIR}/ffmpeg.sh ${BUILD_DIR}/bin/
-chmod 754 ${BUILD_DIR}/usr/lib/share/darktable
+cd ${BUILD_DIR}/usr/lib
+ln -s ../share share
