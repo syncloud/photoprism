@@ -6,7 +6,7 @@ cd ${DIR}
 BUILD_DIR=${DIR}/../build/snap/photoprism
 #${BUILD_DIR}/bin/darktable-cli.sh -v
 
-useradd test
+adduser test
 ls -la /home/test
 sudo -u test ${BUILD_DIR}/bin/darktable-cli.sh -v --core --configdir `pwd`
 
