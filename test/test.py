@@ -84,7 +84,7 @@ def test_ffmpeg(device):
 
 
 def test_darktable(device):
-    device.run_ssh('/snap/photoprism/current/photoprism/bin/darktable-cli.sh -v'.format(TMP_DIR))
+    device.run_ssh('sudo -u photoprism /snap/photoprism/current/photoprism/bin/darktable-cli.sh -v'.format(TMP_DIR))
 
 
 def test_remove(device, app):

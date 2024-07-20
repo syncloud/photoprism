@@ -8,3 +8,6 @@ mv photoprism-develop photoprism-fork
 cd photoprism-fork
 make dep-tensorflow
 make build-go
+
+BUILD_DIR=${DIR}/../build/snap/photoprism
+cp ${DIR}/photoprism-fork/photoprism ${BUILD_DIR}/opt/photoprism/bin/photoprism

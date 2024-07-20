@@ -27,14 +27,21 @@ local build(arch, test_ui, dind) = [{
             image: "linuxserver/mariadb:10.5.16-alpine",
             commands: [
                 "./mariadb/build.sh"
-            ],
+            ]
         },
 	{
             name: "mariadb test",
             image: 'syncloud/platform-buster-' + arch + ':' + platform,
             commands: [
                 "./mariadb/test.sh"
-            ],
+            ]
+        },
+        {
+            name: "photoprism",
+            image: "photoprism/photoprism:" + version,
+            commands: [
+                "./photoprism/build.sh"
+            ]
         },
         {
             name: "photoprism fork",
@@ -44,29 +51,10 @@ local build(arch, test_ui, dind) = [{
             ]
         },
         {
-            name: "photoprism",
-            image: "docker:" + dind,
-            commands: [
-                "./photoprism/build.sh " + version
-            ],
-            volumes: [
-                {
-                    name: "dockersock",
-                    path: "/var/run"
-                }
-            ]
-        },
-        {
             name: "photoprism test",
             image: 'syncloud/platform-buster-' + arch + ':' + platform,
             commands: [
                 "./photoprism/test.sh"
-            ],
-            volumes: [
-                {
-                    name: "dockersock",
-                    path: "/var/run"
-                }
             ]
         },
         {
