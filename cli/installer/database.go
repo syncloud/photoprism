@@ -75,7 +75,7 @@ func (d *Database) Init() error {
 }
 
 func (d *Database) Execute(sql string) error {
-	return d.executor.Run(fmt.Sprintf("%s/bin/sql.sh", d.appDir), "--execute", sql)
+	return d.executor.Run(fmt.Sprintf("%s/bin/sql.sh", d.appDir), "--abort-source-on-error", "--execute", sql)
 }
 
 func (d *Database) Restore() error {
