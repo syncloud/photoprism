@@ -12,3 +12,5 @@ sudo -u test ${BUILD_DIR}/bin/darktable-cli.sh -v
 
 ${BUILD_DIR}/bin/heif-convert -v
 ${BUILD_DIR}/bin/heif-convert --list-decoders
+
+${BUILD_DIR}/bin/exiftool
