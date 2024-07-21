@@ -1,5 +1,5 @@
 import os
-from os.path import join
+from os.path import join, dirname
 from subprocess import check_output
 import time
 import pytest
@@ -9,6 +9,7 @@ from syncloudlib.http import wait_for_rest
 from syncloudlib.integration.hosts import add_host_alias
 from syncloudlib.integration.installer import local_install
 
+DIR = dirname(__file__)
 TMP_DIR = '/tmp/syncloud'
 
 requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
@@ -88,7 +89,7 @@ def test_darktable(device):
 
 
 def test_db_restore_on_upgrade(device, app_archive_path, device_host, device_password, app_domain):
-    device.scp_from_device('profile.jpeg', '/data/photoprism/import')
+    device.scp_from_device(join(DIR, 'images', 'sample.heic'), '/data/photoprism/photos/import', throw=True)
     device.run_ssh('snap run photoprism.cli cp')
     device.run_ssh('snap run photoprism.cli index')
     device.run_ssh('snap run photoprism.cli find')
