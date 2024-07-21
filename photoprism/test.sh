@@ -11,4 +11,4 @@ ls -la /home/test
 sudo -u test ${BUILD_DIR}/bin/darktable-cli.sh -v
 
 ${BUILD_DIR}/bin/heif-convert.sh -v
-
+${BUILD_DIR}/bin/heif-convert.sh --list-decoders
