@@ -95,7 +95,7 @@ def test_heif_convert(device):
 def test_db_restore_on_upgrade(device, app_archive_path, device_host, device_password, app_domain):
     device.scp_to_device(join(DIR, '20220831_001704_66A1ECB0.heic'), '/data/photoprism/photos/import', throw=True)
     output = device.run_ssh('snap run photoprism.cli cp')
-    assert 'error' not in output
+    assert 'media: generated 10 thumbnails' in output
     assert 'not supported' not in output
     device.run_ssh('snap run photoprism.cli index')
     device.run_ssh('snap run photoprism.cli find')

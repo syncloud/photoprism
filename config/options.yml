@@ -1,4 +1,4 @@
-Trace: true
+#Trace: true
 DarktableBin: /snap/photoprism/current/photoprism/bin/darktable-cli.sh
 FFmpegBin: /snap/photoprism/current/photoprism/bin/ffmpeg.sh
 HeifConvertBin: /snap/photoprism/current/photoprism/bin/heif-convert
