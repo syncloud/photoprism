@@ -85,7 +85,11 @@ def test_ffmpeg(device):
 
 
 def test_darktable(device):
-    device.run_ssh('sudo -u photoprism /snap/photoprism/current/photoprism/bin/darktable-cli.sh -v'.format(TMP_DIR))
+    device.run_ssh('sudo -u photoprism /snap/photoprism/current/photoprism/bin/darktable-cli.sh -v')
+
+
+def test_heif_convert(device):
+    device.run_ssh('sudo -u photoprism /snap/photoprism/current/photoprism/bin/heif-convert.sh -v')
 
 
 def test_db_restore_on_upgrade(device, app_archive_path, device_host, device_password, app_domain):
