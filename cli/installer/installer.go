@@ -1,8 +1,10 @@
 package installer
 
 import (
+	"fmt"
 	cp "github.com/otiai10/copy"
 	"github.com/syncloud/golib/config"
+	"github.com/syncloud/golib/linux"
 	"github.com/syncloud/golib/platform"
 	"go.uber.org/zap"
 	"hooks/log"
@@ -10,12 +12,7 @@ import (
 	"path"
 )
 
-const (
-	App       = "photoprism"
-	AppDir    = "/snap/photoprism/current"
-	DataDir   = "/var/snap/photoprism/current"
-	CommonDir = "/var/snap/photoprism/common"
-)
+const App = "photoprism"
 
 type Variables struct {
 	DataDir string
@@ -28,19 +25,28 @@ type Installer struct {
 	platformClient     *platform.Client
 	database           *Database
 	installFile        string
+	appDir             string
+	dataDir            string
+	commonDir          string
 	logger             *zap.Logger
 }
 
 func New() *Installer {
-	configDir := path.Join(DataDir, "config")
+	appDir := fmt.Sprintf("/snap/%s/current", App)
+	dataDir := fmt.Sprintf("/var/snap/%s/current", App)
+	commonDir := fmt.Sprintf("/var/snap/%s/common", App)
+	configDir := path.Join(dataDir, "config")
 	logger := log.Logger()
 	return &Installer{
-		newVersionFile:     path.Join(AppDir, "version"),
-		currentVersionFile: path.Join(DataDir, "version"),
+		newVersionFile:     path.Join(appDir, "version"),
+		currentVersionFile: path.Join(dataDir, "version"),
 		configDir:          configDir,
 		platformClient:     platform.New(),
-		database:           NewDatabase(AppDir, DataDir, configDir, App, NewExecutor(logger), logger),
-		installFile:        path.Join(DataDir, "installed"),
+		database:           NewDatabase(appDir, dataDir, configDir, App, NewExecutor(logger), logger),
+		installFile:        path.Join(dataDir, "installed"),
+		appDir:             appDir,
+		dataDir:            dataDir,
+		commonDir:          commonDir,
 		logger:             logger,
 	}
 }
@@ -161,6 +167,15 @@ func (i *Installer) StorageChange() error {
 	if err != nil {
 		return err
 	}
+
+	err = linux.CreateMissingDirs(
+		path.Join(storageDir, "photos"),
+		path.Join(storageDir, "photos", "import"),
+	)
+	if err != nil {
+		return err
+	}
+
 	err = Chown(storageDir, App)
 	if err != nil {
 		return err
@@ -178,12 +193,12 @@ func (i *Installer) UpdateVersion() error {
 
 func (i *Installer) UpdateConfigs() error {
 	variables := Variables{
-		DataDir: DataDir,
+		DataDir: i.dataDir,
 	}
 
 	err := config.Generate(
-		path.Join(AppDir, "config"),
-		path.Join(DataDir, "config"),
+		path.Join(i.appDir, "config"),
+		path.Join(i.dataDir, "config"),
 		variables,
 	)
 	if err != nil {
@@ -206,11 +221,11 @@ func (i *Installer) RestorePostStart() error {
 }
 
 func (i *Installer) FixPermissions() error {
-	err := Chown(DataDir, App)
+	err := Chown(i.dataDir, App)
 	if err != nil {
 		return err
 	}
-	err = Chown(CommonDir, App)
+	err = Chown(i.commonDir, App)
 	if err != nil {
 		return err
 	}
