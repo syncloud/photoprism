@@ -89,7 +89,7 @@ def test_darktable(device):
 
 
 def test_heif_convert(device):
-    device.run_ssh('sudo -u photoprism /snap/photoprism/current/photoprism/bin/heif-convert.sh -v')
+    device.run_ssh('sudo -u photoprism /snap/photoprism/current/photoprism/bin/heif-convert -v')
 
 
 def test_db_restore_on_upgrade(device, app_archive_path, device_host, device_password, app_domain):
