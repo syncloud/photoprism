@@ -87,6 +87,16 @@ def test_darktable(device):
     device.run_ssh('sudo -u photoprism /snap/photoprism/current/photoprism/bin/darktable-cli.sh -v'.format(TMP_DIR))
 
 
+def test_db_restore_on_upgrade(device, app_archive_path, device_host, device_password, app_domain):
+    device.scp_from_device('profile.jpeg', '/data/photoprism/import')
+    device.run_ssh('snap run photoprism.cli cp')
+    device.run_ssh('snap run photoprism.cli index')
+    device.run_ssh('snap run photoprism.cli find')
+    local_install(device_host, device_password, app_archive_path)
+    wait_for_rest(requests.session(), "https://{0}".format(app_domain), 200, 10)
+    device.run_ssh('snap run photoprism.cli find')
+
+
 def test_remove(device, app):
     response = device.app_remove(app)
     assert response.status_code == 200, response.text
