@@ -89,7 +89,7 @@ def test_darktable(device):
 
 
 def test_db_restore_on_upgrade(device, app_archive_path, device_host, device_password, app_domain):
-    device.scp_from_device(join(DIR, 'images', 'sample.heic'), '/data/photoprism/photos/import', throw=True)
+    device.scp_to_device(join(DIR, 'images', 'sample.heic'), '/data/photoprism/photos/import', throw=True)
     device.run_ssh('snap run photoprism.cli cp')
     device.run_ssh('snap run photoprism.cli index')
     device.run_ssh('snap run photoprism.cli find')

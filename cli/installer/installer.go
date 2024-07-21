@@ -163,7 +163,7 @@ func (i *Installer) PostRefresh() error {
 }
 
 func (i *Installer) StorageChange() error {
-	storageDir, err := platform.New().InitStorage(App, App)
+	storageDir, err := i.platformClient.InitStorage(App, App)
 	if err != nil {
 		return err
 	}
