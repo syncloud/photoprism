@@ -9,5 +9,4 @@ export PHOTOPRISM_LDAP_ADMIN_GROUP_FILTER="(memberUid={username})"
 export PHOTOPRISM_LDAP_ADMIN_GROUP_ATTRIBUTE="memberUid"
 export PHOTOPRISM_LDAP_DEFAULT_USER_ROLE="visitor"
 rm -rf /var/snap/photoprism/common/web.socket
-export PATH=${DIR}/photoprism/bin:$PATH
 exec ${DIR}/photoprism/bin/photoprism.sh --config-path /var/snap/photoprism/current/config start
