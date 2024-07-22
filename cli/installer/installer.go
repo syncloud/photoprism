@@ -78,6 +78,11 @@ func (i *Installer) Install() error {
 }
 
 func (i *Installer) Configure() error {
+	err := i.database.createDb()
+	if err != nil {
+		return err
+	}
+
 	if i.IsInstalled() {
 		err := i.Upgrade()
 		if err != nil {
@@ -96,11 +101,6 @@ func (i *Installer) Configure() error {
 func (i *Installer) Initialize() error {
 	i.logger.Info("initialize")
 	err := i.StorageChange()
-	if err != nil {
-		return err
-	}
-
-	err = i.database.createDb()
 	if err != nil {
 		return err
 	}
