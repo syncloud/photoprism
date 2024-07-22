@@ -2,8 +2,8 @@
 
 DIR=$( cd "$( dirname "$0" )" && pwd )
 cd ${DIR}
-#BRANCH=develop
-BRANCH=debug
+BRANCH=develop
+#BRANCH=debug
 wget --progress=dot:giga https://github.com/cyberb/photoprism/archive/refs/heads/$BRANCH.tar.gz
 tar xf $BRANCH.tar.gz
 mv photoprism-$BRANCH photoprism-fork
