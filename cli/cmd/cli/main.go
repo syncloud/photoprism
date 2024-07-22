@@ -20,7 +20,7 @@ func main() {
 		Use: "storage-change",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			logger.Info("storage-change")
-			return installer.New().StorageChange()
+			return installer.New(logger).StorageChange()
 		},
 	})
 
@@ -35,7 +35,7 @@ func main() {
 		Use: "backup-pre-stop",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			logger.Info("backup-pre-stop")
-			return installer.New().BackupPreStop()
+			return installer.New(logger).BackupPreStop()
 		},
 	})
 
@@ -43,7 +43,7 @@ func main() {
 		Use: "restore-pre-start",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			logger.Info("restore-pre-start")
-			return installer.New().RestorePreStart()
+			return installer.New(logger).RestorePreStart()
 		},
 	})
 
@@ -51,7 +51,7 @@ func main() {
 		Use: "restore-post-start",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			logger.Info("restore-post-start")
-			return installer.New().RestorePostStart()
+			return installer.New(logger).RestorePostStart()
 		},
 	})
 

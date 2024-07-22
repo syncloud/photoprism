@@ -7,7 +7,6 @@ import (
 	"github.com/syncloud/golib/linux"
 	"github.com/syncloud/golib/platform"
 	"go.uber.org/zap"
-	"hooks/log"
 	"os"
 	"path"
 )
@@ -31,12 +30,11 @@ type Installer struct {
 	logger             *zap.Logger
 }
 
-func New() *Installer {
+func New(logger *zap.Logger) *Installer {
 	appDir := fmt.Sprintf("/snap/%s/current", App)
 	dataDir := fmt.Sprintf("/var/snap/%s/current", App)
 	commonDir := fmt.Sprintf("/var/snap/%s/common", App)
 	configDir := path.Join(dataDir, "config")
-	logger := log.Logger()
 	return &Installer{
 		newVersionFile:     path.Join(appDir, "version"),
 		currentVersionFile: path.Join(dataDir, "version"),

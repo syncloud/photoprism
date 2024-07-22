@@ -19,7 +19,6 @@ requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 def module_setup(request, device, app_dir, artifact_dir):
     def module_teardown():
         device.run_ssh('ls -la /var/snap/photoprism/current/config > {0}/config.ls.log'.format(TMP_DIR), throw=False)
-        device.run_ssh('cp /var/snap/photoprism/current/config/photoprism.yaml {0}/photoprism.yaml.log'.format(TMP_DIR), throw=False)
         device.run_ssh('top -bn 1 -w 500 -c > {0}/top.log'.format(TMP_DIR), throw=False)
         device.run_ssh('ps auxfw > {0}/ps.log'.format(TMP_DIR), throw=False)
         device.run_ssh('netstat -nlp > {0}/netstat.log'.format(TMP_DIR), throw=False)
@@ -29,10 +28,6 @@ def module_setup(request, device, app_dir, artifact_dir):
         device.run_ssh('ls -la /var/snap > {0}/var.snap.ls.log'.format(TMP_DIR), throw=False)
         device.run_ssh('ls -la /var/snap/photoprism > {0}/var.snap.photoprism.ls.log'.format(TMP_DIR), throw=False)
         device.run_ssh('ls -la /var/snap/photoprism/current/ > {0}/var.snap.photoprism.current.ls.log'.format(TMP_DIR),
-                       throw=False)
-        device.run_ssh('snap run photoprism.sqlite .dump > {0}/app.test.db.dump.log'.format(TMP_DIR),
-                       throw=False)
-        device.run_ssh('ls -la /var/snap/photoprism/common > {0}/var.snap.photoprism.common.ls.log'.format(TMP_DIR),
                        throw=False)
         device.run_ssh('ls -la /data > {0}/data.ls.log'.format(TMP_DIR), throw=False)
         device.run_ssh('ls -la /data/photoprism > {0}/data.photoprism.ls.log'.format(TMP_DIR), throw=False)
