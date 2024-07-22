@@ -1,5 +1,5 @@
 import os
-from os.path import join
+from os.path import join, dirname
 from subprocess import check_output
 import time
 import pytest
@@ -9,6 +9,7 @@ from syncloudlib.http import wait_for_rest
 from syncloudlib.integration.hosts import add_host_alias
 from syncloudlib.integration.installer import local_install
 
+DIR = dirname(__file__)
 TMP_DIR = '/tmp/syncloud'
 
 requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
@@ -18,7 +19,6 @@ requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 def module_setup(request, device, app_dir, artifact_dir):
     def module_teardown():
         device.run_ssh('ls -la /var/snap/photoprism/current/config > {0}/config.ls.log'.format(TMP_DIR), throw=False)
-        device.run_ssh('cp /var/snap/photoprism/current/config/photoprism.yaml {0}/photoprism.yaml.log'.format(TMP_DIR), throw=False)
         device.run_ssh('top -bn 1 -w 500 -c > {0}/top.log'.format(TMP_DIR), throw=False)
         device.run_ssh('ps auxfw > {0}/ps.log'.format(TMP_DIR), throw=False)
         device.run_ssh('netstat -nlp > {0}/netstat.log'.format(TMP_DIR), throw=False)
@@ -28,10 +28,6 @@ def module_setup(request, device, app_dir, artifact_dir):
         device.run_ssh('ls -la /var/snap > {0}/var.snap.ls.log'.format(TMP_DIR), throw=False)
         device.run_ssh('ls -la /var/snap/photoprism > {0}/var.snap.photoprism.ls.log'.format(TMP_DIR), throw=False)
         device.run_ssh('ls -la /var/snap/photoprism/current/ > {0}/var.snap.photoprism.current.ls.log'.format(TMP_DIR),
-                       throw=False)
-        device.run_ssh('snap run photoprism.sqlite .dump > {0}/app.test.db.dump.log'.format(TMP_DIR),
-                       throw=False)
-        device.run_ssh('ls -la /var/snap/photoprism/common > {0}/var.snap.photoprism.common.ls.log'.format(TMP_DIR),
                        throw=False)
         device.run_ssh('ls -la /data > {0}/data.ls.log'.format(TMP_DIR), throw=False)
         device.run_ssh('ls -la /data/photoprism > {0}/data.photoprism.ls.log'.format(TMP_DIR), throw=False)
@@ -84,7 +80,27 @@ def test_ffmpeg(device):
 
 
 def test_darktable(device):
-    device.run_ssh('sudo -u photoprism /snap/photoprism/current/photoprism/bin/darktable-cli.sh -v'.format(TMP_DIR))
+    device.run_ssh('sudo -u photoprism /snap/photoprism/current/photoprism/bin/darktable-cli.sh -v')
+
+
+def test_heif_convert(device):
+    device.run_ssh('sudo -u photoprism /snap/photoprism/current/photoprism/bin/heif-convert -v')
+
+
+def test_db_restore_on_upgrade(device, app_archive_path, device_host, device_password, app_domain):
+    device.scp_to_device(join(DIR, '20220831_001704_66A1ECB0.heic'), '/data/photoprism/photos/import', throw=True)
+    output = device.run_ssh('snap run photoprism.cli cp')
+    assert 'media: generated 10 thumbnails' in output
+    assert 'not supported' not in output
+    device.run_ssh('snap run photoprism.cli index')
+    device.run_ssh("snap run photoprism.sql photoprism --execute 'select count(*) from photos'")
+    output = device.run_ssh('snap run photoprism.cli find')
+    assert "20220831_001704_66A1ECB0.heic" in output
+    local_install(device_host, device_password, app_archive_path)
+    wait_for_rest(requests.session(), "https://{0}".format(app_domain), 200, 10)
+    device.run_ssh("snap run photoprism.sql photoprism --execute 'select count(*) from photos'")
+    output = device.run_ssh('snap run photoprism.cli find')
+    assert "20220831_001704_66A1ECB0.heic" in output
 
 
 def test_remove(device, app):

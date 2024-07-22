@@ -10,5 +10,7 @@ adduser test
 ls -la /home/test
 sudo -u test ${BUILD_DIR}/bin/darktable-cli.sh -v
 
-#${BUILD_DIR}/bin/darktable-cli.sh test123.orf test.jpg --apply-custom-presets false --width 7680 --height 7680 --hq true --upscale false --core --library :memory:
+${BUILD_DIR}/bin/heif-convert -v
+${BUILD_DIR}/bin/heif-convert --list-decoders
 
+${BUILD_DIR}/bin/exiftool

@@ -11,8 +11,8 @@ cp -r /bin ${BUILD_DIR}
 cp -r /usr ${BUILD_DIR}
 cp -r /lib ${BUILD_DIR}
 cp -r /opt ${BUILD_DIR}
-#cp -r /lib64 ${BUILD_DIR} || true
 
+mv ${BUILD_DIR}/bin/exiftool ${BUILD_DIR}/bin/exiftool.orig
 cp -r ${DIR}/bin/* ${BUILD_DIR}/bin
 cp lib/*-linux*/ld-*.so* ${BUILD_DIR}/lib/ld.so
 ls -la

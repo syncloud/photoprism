@@ -75,7 +75,7 @@ func (d *Database) Init() error {
 }
 
 func (d *Database) Execute(sql string) error {
-	return d.executor.Run(fmt.Sprintf("%s/bin/sql.sh", d.appDir), "--execute", sql)
+	return d.executor.Run(fmt.Sprintf("%s/bin/sql.sh", d.appDir), "--abort-source-on-error", "--execute", sql)
 }
 
 func (d *Database) Restore() error {
@@ -83,7 +83,7 @@ func (d *Database) Restore() error {
 		d.logger.Warn("backup file does not exist", zap.String("file", d.backupFile))
 		return nil
 	}
-	return d.Execute(fmt.Sprintf("source %s", d.backupFile))
+	return d.Execute(fmt.Sprintf("use %s; source %s;", App, d.backupFile))
 }
 
 func (d *Database) Backup() error {
