@@ -59,7 +59,7 @@ local build(arch, test_ui, dind) = [{
         },
         {
             name: "cli",
-            image: "golang:1.20",
+            image: "golang:1.22.5",
             commands: [
                 "cd cli",
                 "go build -ldflags '-linkmode external -extldflags -static' -o ../build/snap/meta/hooks/install ./cmd/install",
