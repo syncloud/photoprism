@@ -94,6 +94,7 @@ func (i *Installer) Configure() error {
 }
 
 func (i *Installer) Initialize() error {
+	i.logger.Info("initialize")
 	err := i.StorageChange()
 	if err != nil {
 		return err
@@ -113,6 +114,7 @@ func (i *Installer) Initialize() error {
 }
 
 func (i *Installer) Upgrade() error {
+	i.logger.Info("upgrade")
 	err := i.database.Restore()
 	if err != nil {
 		return err
@@ -127,7 +129,7 @@ func (i *Installer) Upgrade() error {
 
 func (i *Installer) IsInstalled() bool {
 	_, err := os.Stat(i.installFile)
-	return os.IsExist(err)
+	return err == nil
 }
 
 func (i *Installer) PreRefresh() error {
