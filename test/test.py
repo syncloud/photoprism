@@ -98,12 +98,12 @@ def test_db_restore_on_upgrade(device, app_archive_path, device_host, device_pas
     assert 'media: generated 10 thumbnails' in output
     assert 'not supported' not in output
     device.run_ssh('snap run photoprism.cli index')
-    device.run_ssh('snap run photoprism.sql photoprism --execute "select count(*) from photos"')
+    device.run_ssh("snap run photoprism.sql photoprism --execute 'select count(*) from photos'")
     output = device.run_ssh('snap run photoprism.cli find')
     assert "20220831_001704_66A1ECB0.heic" in output
     local_install(device_host, device_password, app_archive_path)
     wait_for_rest(requests.session(), "https://{0}".format(app_domain), 200, 10)
-    device.run_ssh('snap run photoprism.sql photoprism --execute "select count(*) from photos"')
+    device.run_ssh("snap run photoprism.sql photoprism --execute 'select count(*) from photos'")
     output = device.run_ssh('snap run photoprism.cli find')
     assert "20220831_001704_66A1ECB0.heic" in output
 
