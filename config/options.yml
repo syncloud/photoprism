@@ -20,3 +20,4 @@ DatabaseUser: photoprism
 DatabasePassword: photoprism
 Theme: lavendel
 Language: english
+IndexSchedule: "@every 3h"
