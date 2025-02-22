@@ -4,7 +4,7 @@ require (
 	github.com/otiai10/copy v1.12.0
 	github.com/richiefi/zap-syslog v0.0.0-20240606090728-4445f50797c5
 	github.com/spf13/cobra v1.7.0
-	github.com/syncloud/golib v1.1.13
+	github.com/syncloud/golib v1.1.15
 	go.uber.org/zap v1.27.0
 )
 
