@@ -2,14 +2,16 @@ package main
 
 import (
 	"fmt"
-	"github.com/spf13/cobra"
 	"hooks/installer"
 	"hooks/log"
 	"os"
+
+	"github.com/spf13/cobra"
+	"go.uber.org/zap"
 )
 
 func main() {
-	logger := log.Logger()
+	logger := log.Logger(zap.DebugLevel)
 
 	var cmd = &cobra.Command{
 		Use:          "cli",

@@ -1,279 +1,221 @@
-local name = "photoprism";
-local browser = "firefox";
-local version = "240523";
-local fork_version = "240521-jammy";
-local nginx = "1.24.0";
-local platform = '24.05';
+local name = 'photoprism';
+local version = '240523';
+local platform = '26.04.10';
+local debian = 'bookworm-slim';
+local python = '3.12-slim-bookworm';
+local go = '1.26';
+local dind = '20.10.21-dind';
 local deployer = 'https://github.com/syncloud/store/releases/download/4/syncloud-release';
+local distro_default = 'bookworm';
+local distros = ['bookworm', 'buster'];
 
-local build(arch, test_ui, dind) = [{
-    kind: "pipeline",
-    type: "docker",
-    name: arch,
-    platform: {
-        os: "linux",
-        arch: arch
-    },
-    steps: [
-        {
-            name: "version",
-            image: "debian:buster-slim",
-            commands: [
-                "echo $DRONE_BUILD_NUMBER > version",
-            ]
-        },
-  {
-            name: "mariadb",
-            image: "linuxserver/mariadb:10.5.16-alpine",
-            commands: [
-                "./mariadb/build.sh"
-            ]
-        },
-	{
-            name: "mariadb test",
-            image: 'syncloud/platform-buster-' + arch + ':' + platform,
-            commands: [
-                "./mariadb/test.sh"
-            ]
-        },
-        {
-            name: "photoprism",
-            image: "photoprism/photoprism:" + version,
-            commands: [
-                "./photoprism/build.sh"
-            ]
-        },
-        {
-            name: "photoprism fork",
-            image: "photoprism/develop:" + fork_version,
-            commands: [
-                "./photoprism/build-fork.sh"
-            ]
-        },
-        {
-            name: "photoprism test",
-            image: 'syncloud/platform-buster-' + arch + ':' + platform,
-            commands: [
-                "./photoprism/test.sh"
-            ]
-        },
-        {
-            name: "cli",
-            image: "golang:1.22.5",
-            commands: [
-                "cd cli",
-                "go build -ldflags '-linkmode external -extldflags -static' -o ../build/snap/meta/hooks/install ./cmd/install",
-                "go build -ldflags '-linkmode external -extldflags -static' -o ../build/snap/meta/hooks/configure ./cmd/configure",
-                "go build -ldflags '-linkmode external -extldflags -static' -o ../build/snap/meta/hooks/pre-refresh ./cmd/pre-refresh",
-                "go build -ldflags '-linkmode external -extldflags -static' -o ../build/snap/meta/hooks/post-refresh ./cmd/post-refresh",
-                "go build -ldflags '-linkmode external -extldflags -static' -o ../build/snap/bin/cli ./cmd/cli",
-            ]
-        },
-        {
-            name: "package",
-            image: "debian:buster-slim",
-            commands: [
-                "VERSION=$(cat version)",
-                "./package.sh " + name + " $VERSION "
-            ]
-        },
-        {
-            name: "test",
-            image: "python:3.8-slim-buster",
-            commands: [
-              "APP_ARCHIVE_PATH=$(realpath $(cat package.name))",
-              "cd test",
-              "./deps.sh",
-              "py.test -x -s test.py --distro=buster --domain=buster.com --app-archive-path=$APP_ARCHIVE_PATH --device-host=" + name + ".buster.com --app=" + name + " --arch=" + arch
-            ]
-        }] + ( if test_ui then [
-        {
-            name: "selenium-video",
-            image: "selenium/video:ffmpeg-4.3.1-20220208",
-            detach: true,
-            environment: {
-                DISPLAY_CONTAINER_NAME: "selenium",
-                FILE_NAME: "video.mkv"
-            },
-            volumes: [
-                {
-                    name: "shm",
-                    path: "/dev/shm"
-                },
-               {
-                    name: "videos",
-                    path: "/videos"
-                }
-            ]
-        },
-        {
-            name: "test-ui",
-            image: "python:3.8-slim-buster",
-            commands: [
-              "cd test",
-              "./deps.sh",
-              "py.test -x -s ui.py --distro=buster --ui-mode=desktop --domain=buster.com --device-host=" + name + ".buster.com --app=" + name + " --browser-height=2000 --browser=" + browser,
-            ],
-            volumes: [{
-                name: "videos",
-                path: "/videos"
-            }]
-        }
+local platform_image(distro, arch) =
+  'syncloud/platform-' + distro + '-' + arch + ':' + platform;
 
-] else [] ) +[
+local build(arch, test_ui) = [{
+  kind: 'pipeline',
+  type: 'docker',
+  name: arch,
+  platform: {
+    os: 'linux',
+    arch: arch,
+  },
+  steps: [
     {
-        name: "test-upgrade",
-        image: "python:3.8-slim-buster",
-        commands: [
-          "APP_ARCHIVE_PATH=$(realpath $(cat package.name))",
-          "cd test",
-          "./deps.sh",
-          "py.test -x -s upgrade.py --distro=buster --ui-mode=desktop --domain=buster.com --app-archive-path=$APP_ARCHIVE_PATH --device-host=" + name + ".buster.com --app=" + name + " --browser=" + browser,
-        ]
+      name: 'version',
+      image: 'debian:' + debian,
+      commands: [
+        'echo $DRONE_BUILD_NUMBER > version',
+      ],
     },
-                    {
-              name: 'upload',
-              image: 'debian:buster-slim',
-              environment: {
-                AWS_ACCESS_KEY_ID: {
-                  from_secret: 'AWS_ACCESS_KEY_ID',
-                },
-                AWS_SECRET_ACCESS_KEY: {
-                  from_secret: 'AWS_SECRET_ACCESS_KEY',
-                },
-                SYNCLOUD_TOKEN: {
-                  from_secret: 'SYNCLOUD_TOKEN',
-                },
-              },
-              commands: [
-                'PACKAGE=$(cat package.name)',
-                'apt update && apt install -y wget',
-                'wget ' + deployer + '-' + arch + ' -O release --progress=dot:giga',
-                'chmod +x release',
-                './release publish -f $PACKAGE -b $DRONE_BRANCH',
-              ],
-              when: {
-                branch: ['stable', 'master'],
-                event: ['push'],
-              },
-            },
-            {
-                  name: 'promote',
-                  image: 'debian:buster-slim',
-                  environment: {
-                    AWS_ACCESS_KEY_ID: {
-                      from_secret: 'AWS_ACCESS_KEY_ID',
-                    },
-                    AWS_SECRET_ACCESS_KEY: {
-                      from_secret: 'AWS_SECRET_ACCESS_KEY',
-                    },
-                    SYNCLOUD_TOKEN: {
-                      from_secret: 'SYNCLOUD_TOKEN',
-                    },
-                  },
-                  commands: [
-                    'apt update && apt install -y wget',
-                    'wget ' + deployer + '-' + arch + ' -O release --progress=dot:giga',
-                    'chmod +x release',
-                    './release promote -n ' + name + ' -a $(dpkg --print-architecture)',
-                  ],
-                  when: {
-                    branch: ['stable'],
-                    event: ['push'],
-                  },
-                },
-        {
-            name: "artifact",
-            image: "appleboy/drone-scp:1.6.4",
-            settings: {
-                host: {
-                    from_secret: "artifact_host"
-                },
-                username: "artifact",
-                key: {
-                    from_secret: "artifact_key"
-                },
-                timeout: "2m",
-                command_timeout: "2m",
-                target: "/home/artifact/repo/" + name + "/${DRONE_BUILD_NUMBER}-" + arch,
-                source: "artifact/*",
-		             strip_components: 1
-            },
-            when: {
-              status: [ "failure", "success" ],
-              event: [ "push" ]
-            }
-        }
+    {
+      name: 'mariadb',
+      image: 'linuxserver/mariadb:10.5.16-alpine',
+      commands: [
+        './mariadb/build.sh',
+      ],
+    },
+  ] + [
+    {
+      name: 'mariadb test ' + distro,
+      image: platform_image(distro, arch),
+      commands: [
+        './mariadb/test.sh',
+      ],
+    }
+    for distro in distros
+  ] + [
+    {
+      name: 'photoprism',
+      image: 'photoprism/photoprism:' + version,
+      commands: [
+        './photoprism/build.sh',
+      ],
+    },
+  ] + [
+    {
+      name: 'photoprism test ' + distro,
+      image: platform_image(distro, arch),
+      commands: [
+        './photoprism/test.sh',
+      ],
+    }
+    for distro in distros
+  ] + [
+    {
+      name: 'cli',
+      image: 'golang:' + go,
+      commands: [
+        'cd cli',
+        'mkdir -p ../build/snap/meta/hooks ../build/snap/bin',
+        'CGO_ENABLED=0 go build -buildvcs=false -o ../build/snap/meta/hooks/install ./cmd/install',
+        'CGO_ENABLED=0 go build -buildvcs=false -o ../build/snap/meta/hooks/configure ./cmd/configure',
+        'CGO_ENABLED=0 go build -buildvcs=false -o ../build/snap/meta/hooks/pre-refresh ./cmd/pre-refresh',
+        'CGO_ENABLED=0 go build -buildvcs=false -o ../build/snap/meta/hooks/post-refresh ./cmd/post-refresh',
+        'CGO_ENABLED=0 go build -buildvcs=false -o ../build/snap/bin/cli ./cmd/cli',
+      ],
+    },
+    {
+      name: 'package',
+      image: 'debian:' + debian,
+      commands: [
+        'VERSION=$(cat version)',
+        './package.sh ' + name + ' $VERSION ',
+      ],
+    },
+  ] + [
+    {
+      name: 'test ' + distro,
+      image: 'python:' + python,
+      commands: [
+        'cd test',
+        './deps.sh',
+        'py.test -x -s test.py --distro=' + distro + ' --ver=$DRONE_BUILD_NUMBER --app=' + name,
+      ],
+    }
+    for distro in distros
+  ] + (if test_ui then [
+         {
+           name: 'e2e',
+           image: 'mcr.microsoft.com/playwright:v1.48.2-jammy',
+           environment: {
+             PLAYWRIGHT_FULL_DOMAIN: distro_default + '.com',
+             PLAYWRIGHT_APP_DOMAIN: name + '.' + distro_default + '.com',
+             PLAYWRIGHT_DEVICE_HOST: name + '.' + distro_default + '.com',
+             PLAYWRIGHT_ARTIFACT_DIR: '/drone/src/artifact',
+           },
+           commands: [
+             'apt-get update -qq && apt-get install -y -qq sshpass openssh-client imagemagick curl',
+             'cd test',
+             'head -c $((3*1000*1000)) /dev/urandom | convert -depth 8 -size 1000x1000 RGB:- images/generated-big.png',
+             'cd e2e',
+             'npm ci --no-audit --no-fund',
+             'npx playwright test --project=desktop',
+           ],
+         },
+       ] else []) + [
+    {
+      name: 'test-upgrade',
+      image: 'python:' + python,
+      commands: [
+        'cd test',
+        './deps.sh',
+        'py.test -x -s upgrade.py --distro=' + distro_default + ' --ver=$DRONE_BUILD_NUMBER --app=' + name,
+      ],
+    },
+    {
+      name: 'upload',
+      image: 'debian:' + debian,
+      environment: {
+        AWS_ACCESS_KEY_ID: { from_secret: 'AWS_ACCESS_KEY_ID' },
+        AWS_SECRET_ACCESS_KEY: { from_secret: 'AWS_SECRET_ACCESS_KEY' },
+        SYNCLOUD_TOKEN: { from_secret: 'SYNCLOUD_TOKEN' },
+      },
+      commands: [
+        'PACKAGE=$(cat package.name)',
+        'apt update && apt install -y wget',
+        'wget ' + deployer + '-' + arch + ' -O release --progress=dot:giga',
+        'chmod +x release',
+        './release publish -f $PACKAGE -b $DRONE_BRANCH',
+      ],
+      when: {
+        branch: ['stable', 'master'],
+        event: ['push'],
+      },
+    },
+    {
+      name: 'promote',
+      image: 'debian:' + debian,
+      environment: {
+        AWS_ACCESS_KEY_ID: { from_secret: 'AWS_ACCESS_KEY_ID' },
+        AWS_SECRET_ACCESS_KEY: { from_secret: 'AWS_SECRET_ACCESS_KEY' },
+        SYNCLOUD_TOKEN: { from_secret: 'SYNCLOUD_TOKEN' },
+      },
+      commands: [
+        'apt update && apt install -y wget',
+        'wget ' + deployer + '-' + arch + ' -O release --progress=dot:giga',
+        'chmod +x release',
+        './release promote -n ' + name + ' -a $(dpkg --print-architecture)',
+      ],
+      when: {
+        branch: ['stable'],
+        event: ['push'],
+      },
+    },
+    {
+      name: 'artifact',
+      image: 'appleboy/drone-scp:1.6.4',
+      settings: {
+        host: { from_secret: 'artifact_host' },
+        username: 'artifact',
+        key: { from_secret: 'artifact_key' },
+        timeout: '2m',
+        command_timeout: '2m',
+        target: '/home/artifact/repo/' + name + '/${DRONE_BUILD_NUMBER}-' + arch,
+        source: 'artifact/*',
+        strip_components: 1,
+      },
+      when: {
+        status: ['failure', 'success'],
+        event: ['push'],
+      },
+    },
+  ],
+  trigger: {
+    event: [
+      'push',
+      'pull_request',
     ],
-     trigger: {
-       event: [
-         "push",
-         "pull_request"
-       ]
-     },
-    services: [
-        {
-            name: "docker",
-            image: "docker:" + dind,
-            privileged: true,
-            volumes: [
-                {
-                    name: "dockersock",
-                    path: "/var/run"
-                }
-            ]
-        },
-        {
-            name: name + ".buster.com",
-            image: "syncloud/platform-buster-" + arch + ":" + platform,
-            privileged: true,
-            volumes: [
-                {
-                    name: "dbus",
-                    path: "/var/run/dbus"
-                },
-                {
-                    name: "dev",
-                    path: "/dev"
-                }
-            ]
-        }
-    ] + ( if test_ui then [{
-            name: "selenium",
-            image: "selenium/standalone-" + browser + ":4.0.0-beta-3-prerelease-20210402",
-            volumes: [{
-                name: "shm",
-                path: "/dev/shm"
-            }]
-        }
-    ] else [] ),
-    volumes: [
-        {
-            name: "dbus",
-            host: {
-                path: "/var/run/dbus"
-            }
-        },
-        {
-            name: "dev",
-            host: {
-                path: "/dev"
-            }
-        },
-        {
-            name: "shm",
-            temp: {}
-        },
-        {
-            name: "dockersock",
-            temp: {}
-        },
-        {
-            name: "videos",
-            temp: {}
-        },
-      ]
+  },
+  services: [
+    {
+      name: 'docker',
+      image: 'docker:' + dind,
+      privileged: true,
+      volumes: [{
+        name: 'dockersock',
+        path: '/var/run',
+      }],
+    },
+  ] + [
+    {
+      name: name + '.' + distro + '.com',
+      image: platform_image(distro, arch),
+      privileged: true,
+      entrypoint: ['/bin/sh', '-c', "mkdir -p /etc/systemd/system/snapd.service.d && printf '[Service]\\nExecStartPost=/bin/sh -c \"/usr/bin/snap set system refresh.hold=2099-01-01T00:00:00Z\"\\n' > /etc/systemd/system/snapd.service.d/disable-refresh.conf && exec /sbin/init"],
+      volumes: [
+        { name: 'dbus', path: '/var/run/dbus' },
+        { name: 'dev', path: '/dev' },
+      ],
+    }
+    for distro in distros
+  ],
+  volumes: [
+    { name: 'dbus', host: { path: '/var/run/dbus' } },
+    { name: 'dev', host: { path: '/dev' } },
+    { name: 'dockersock', temp: {} },
+  ],
 }];
 
-build("amd64", true, "20.10.21-dind") +
-build("arm64", false, "20.10.21-dind")
+build('amd64', true) +
+build('arm64', false)

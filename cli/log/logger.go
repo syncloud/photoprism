@@ -2,18 +2,19 @@ package log
 
 import (
 	"fmt"
-	zapsyslog "github.com/richiefi/zap-syslog"
-	"github.com/richiefi/zap-syslog/syslog"
+	"log/syslog"
+	"os"
+
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
-	"os"
 )
 
-func Logger() *zap.Logger {
+func Logger(level zapcore.Level) *zap.Logger {
 	logConfig := zap.NewProductionConfig()
 	logConfig.Encoding = "console"
 	logConfig.EncoderConfig.TimeKey = ""
 	logConfig.EncoderConfig.ConsoleSeparator = " "
+	logConfig.Level = zap.NewAtomicLevelAt(level)
 	logger, err := logConfig.Build()
 	if err != nil {
 		panic(fmt.Sprintf("can't initialize zap logger: %v", err))
@@ -21,35 +22,18 @@ func Logger() *zap.Logger {
 	return logger
 }
 
-func SysLogger(app string) *zap.Logger {
-	enc := zapsyslog.NewSyslogEncoder(zapsyslog.SyslogEncoderConfig{
-		EncoderConfig: zapcore.EncoderConfig{
-			NameKey:        "logger",
-			CallerKey:      "caller",
-			MessageKey:     "msg",
-			StacktraceKey:  "stacktrace",
-			EncodeLevel:    zapcore.LowercaseLevelEncoder,
-			EncodeTime:     zapcore.EpochTimeEncoder,
-			EncodeDuration: zapcore.SecondsDurationEncoder,
-			EncodeCaller:   zapcore.ShortCallerEncoder,
-		},
+func HookLogger(tag string, level zapcore.Level) *zap.Logger {
+	encConfig := zap.NewProductionEncoderConfig()
+	encConfig.TimeKey = ""
+	encConfig.ConsoleSeparator = " "
+	encoder := zapcore.NewConsoleEncoder(encConfig)
+	atom := zap.NewAtomicLevelAt(level)
 
-		Facility: syslog.LOG_LOCAL0,
-		Hostname: "",
-		PID:      os.Getpid(),
-		App:      app,
-	})
-
-	sink, err := zapsyslog.NewConnSyncer("unixgram", "/dev/log")
-	if err != nil {
-		panic(err)
+	cores := []zapcore.Core{
+		zapcore.NewCore(encoder, zapcore.Lock(os.Stdout), atom),
 	}
-
-	atom := zap.NewAtomicLevel()
-	logger := zap.New(zapcore.NewCore(
-		enc,
-		zapcore.Lock(sink),
-		atom,
-	))
-	return logger
+	if w, err := syslog.New(syslog.LOG_INFO|syslog.LOG_DAEMON, tag); err == nil {
+		cores = append(cores, zapcore.NewCore(encoder, zapcore.AddSync(w), atom))
+	}
+	return zap.New(zapcore.NewTee(cores...))
 }

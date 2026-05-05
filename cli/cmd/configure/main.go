@@ -2,17 +2,21 @@ package main
 
 import (
 	"fmt"
-	"github.com/spf13/cobra"
 	"hooks/installer"
 	"hooks/log"
 	"os"
+
+	"github.com/spf13/cobra"
+	"go.uber.org/zap"
 )
 
 func main() {
+	logger := log.HookLogger(installer.App+"-configure", zap.DebugLevel)
+
 	var rootCmd = &cobra.Command{
+		Use:          "configure",
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			logger := log.SysLogger(fmt.Sprint(installer.App, ":configure"))
 			return installer.New(logger).Configure()
 		},
 	}
