@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"path"
+	"time"
 )
 
 type Database struct {
@@ -97,7 +98,33 @@ func (d *Database) Backup() error {
 	)
 }
 
+func (d *Database) WaitReady(timeout time.Duration) error {
+	socket := path.Join(d.dataDir, "mysql.sock")
+	deadline := time.Now().Add(timeout)
+	sql := fmt.Sprintf("%s/bin/sql.sh", d.appDir)
+	for {
+		if _, err := os.Stat(socket); err == nil {
+			cmd := exec.Command(sql, "--execute", "SELECT 1")
+			if out, err := cmd.CombinedOutput(); err == nil {
+				d.logger.Info("mariadb is ready", zap.ByteString("output", out))
+				return nil
+			} else {
+				d.logger.Info("mariadb ping failed, retrying", zap.ByteString("output", out), zap.Error(err))
+			}
+		} else {
+			d.logger.Info("mariadb socket not present yet", zap.String("socket", socket))
+		}
+		if time.Now().After(deadline) {
+			return fmt.Errorf("mariadb did not become ready within %s (socket=%s)", timeout, socket)
+		}
+		time.Sleep(time.Second)
+	}
+}
+
 func (d *Database) createDb() error {
+	if err := d.WaitReady(60 * time.Second); err != nil {
+		return err
+	}
 	err := d.Execute(fmt.Sprintf("CREATE DATABASE %s", App))
 	if err != nil {
 		return err
