@@ -102,6 +102,8 @@ local build(arch, test_ui) = [{
              PLAYWRIGHT_FULL_DOMAIN: distro_default + '.com',
              PLAYWRIGHT_APP_DOMAIN: name + '.' + distro_default + '.com',
              PLAYWRIGHT_DEVICE_HOST: name + '.' + distro_default + '.com',
+             PLAYWRIGHT_DEVICE_USER: 'user',
+             PLAYWRIGHT_DEVICE_PASSWORD: 'Password1',
              PLAYWRIGHT_ARTIFACT_DIR: '/drone/src/artifact',
            },
            commands: [
