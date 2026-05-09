@@ -12,8 +12,8 @@ shipped before commit 1b9b9c8.
 
 ---
  internal/entity/auth_session_login.go      |  6 ++
- internal/entity/auth_session_login_ldap.go | 86 ++++++++++++++++++++++
- 2 files changed, 92 insertions(+)
+ internal/entity/auth_session_login_ldap.go | 92 ++++++++++++++++++++++
+ 2 files changed, 98 insertions(+)
  create mode 100644 internal/entity/auth_session_login_ldap.go
 
 diff --git a/internal/entity/auth_session_login.go b/internal/entity/auth_session_login.go
@@ -36,7 +36,7 @@ diff --git a/internal/entity/auth_session_login_ldap.go b/internal/entity/auth_s
 new file mode 100644
 --- /dev/null
 +++ b/internal/entity/auth_session_login_ldap.go
-@@ -0,0 +1,86 @@
+@@ -0,0 +1,92 @@
 +package entity
 +
 +import (
