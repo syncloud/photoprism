@@ -50,7 +50,6 @@ local build(arch, test_ui) = [{
       image: 'photoprism/photoprism:' + version,
       commands: [
         './photoprism/build.sh',
-        './photoprism/build-fork.sh',
       ],
     },
   ] + [
