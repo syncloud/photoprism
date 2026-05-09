@@ -57,7 +57,7 @@ def test_install(app_archive_path, device_host, device_password):
 
 
 def test_index(app_domain):
-    wait_for_rest(requests.session(), "https://{0}".format(app_domain), 200, 10)
+    wait_for_rest(requests.session(), "https://{0}/api/v1/status".format(app_domain), 200, 10)
 
 
 def __log_data_dir(device):
@@ -97,7 +97,7 @@ def test_db_restore_on_upgrade(device, app_archive_path, device_host, device_pas
     output = device.run_ssh('snap run photoprism.cli find')
     assert "20220831_001704_66A1ECB0.heic" in output
     local_install(device_host, device_password, app_archive_path)
-    wait_for_rest(requests.session(), "https://{0}".format(app_domain), 200, 10)
+    wait_for_rest(requests.session(), "https://{0}/api/v1/status".format(app_domain), 200, 10)
     device.run_ssh("snap run photoprism.sql photoprism --execute 'select count(*) from photos'")
     output = device.run_ssh('snap run photoprism.cli find')
     assert "20220831_001704_66A1ECB0.heic" in output
@@ -110,12 +110,12 @@ def test_remove(device, app):
 
 def test_reinstall(app_archive_path, device_host, device_password, app_domain):
     local_install(device_host, device_password, app_archive_path)
-    wait_for_rest(requests.session(), "https://{0}".format(app_domain), 200, 10)
+    wait_for_rest(requests.session(), "https://{0}/api/v1/status".format(app_domain), 200, 10)
 
 
 def test_upgrade(app_archive_path, device_host, device_password, app_domain):
     local_install(device_host, device_password, app_archive_path)
-    wait_for_rest(requests.session(), "https://{0}".format(app_domain), 200, 10)
+    wait_for_rest(requests.session(), "https://{0}/api/v1/status".format(app_domain), 200, 10)
 
 
 def retry(method, retries=10):
