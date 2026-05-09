@@ -19,8 +19,7 @@ test.beforeAll(async () => {
 
 test.describe('login', () => {
   test('continues with openid via authelia', async ({ page }, testInfo) => {
-    await page.goto('/')
-    await page.locator('.action-oidc-login').click()
+    await page.goto('/api/v1/oidc/login')
     await expect(page).toHaveURL(new RegExp(`^https://auth\\.${fullDomain.replace(/\./g, '\\.')}/`), { timeout: 30_000 })
     await page.locator('#username-textfield').fill(deviceUser)
     await page.locator('#password-textfield').fill(devicePassword)
