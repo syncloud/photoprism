@@ -45,6 +45,8 @@ def test_start(module_setup, device, device_host, app, domain):
     add_host_alias(app, device_host, domain)
     device.run_ssh('date', retries=100)
     device.run_ssh('mkdir {0}'.format(TMP_DIR))
+    device.run_ssh('cp /var/snap/platform/current/syncloud.ca.crt /usr/local/share/ca-certificates')
+    device.run_ssh('update-ca-certificates 2>&1 > {0}/update-ca-certificates.log'.format(TMP_DIR))
 
 
 def test_activate_device(device):
