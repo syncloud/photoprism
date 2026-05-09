@@ -1,5 +1,5 @@
 local name = 'photoprism';
-local upstream_runtime = '260305';
+local version = '260305';
 local platform = '26.04.10';
 local debian = 'bookworm-slim';
 local python = '3.12-slim-bookworm';
@@ -47,7 +47,7 @@ local build(arch, test_ui) = [{
   ] + [
     {
       name: 'photoprism',
-      image: 'photoprism/photoprism:' + upstream_runtime,
+      image: 'photoprism/photoprism:' + version,
       commands: [
         './photoprism/build.sh',
       ],
