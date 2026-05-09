@@ -52,6 +52,13 @@ local build(arch, test_ui) = [{
         './photoprism/build.sh',
       ],
     },
+    {
+      name: 'photoprism fork',
+      image: 'photoprism/develop:260505-jammy',
+      commands: [
+        './photoprism/build-fork.sh',
+      ],
+    },
   ] + [
     {
       name: 'photoprism test ' + distro,
