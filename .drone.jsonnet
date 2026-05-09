@@ -1,7 +1,5 @@
 local name = 'photoprism';
-local upstream_source = '260305-fad9d5395';
 local upstream_runtime = '260305';
-local upstream_build = '260303-jammy';
 local platform = '26.04.10';
 local debian = 'bookworm-slim';
 local python = '3.12-slim-bookworm';
@@ -52,16 +50,6 @@ local build(arch, test_ui) = [{
       image: 'photoprism/photoprism:' + upstream_runtime,
       commands: [
         './photoprism/build.sh',
-      ],
-    },
-    {
-      name: 'photoprism fork',
-      image: 'photoprism/develop:' + upstream_build,
-      environment: {
-        UPSTREAM_TAG: upstream_source,
-      },
-      commands: [
-        './photoprism/build-fork.sh',
       ],
     },
   ] + [
