@@ -3,7 +3,7 @@
 DIR=$( cd "$( dirname "$0" )" && pwd )
 BUILD_DIR=${DIR}/../build/snap/photoprism
 
-UPSTREAM_TAG=260305-fad9d5395
+: "${UPSTREAM_TAG:?required: upstream release tag e.g. 260305-fad9d5395}"
 
 cd ${DIR}
 wget --progress=dot:giga https://github.com/photoprism/photoprism/archive/refs/tags/${UPSTREAM_TAG}.tar.gz

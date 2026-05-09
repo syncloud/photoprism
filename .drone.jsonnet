@@ -1,5 +1,14 @@
 local name = 'photoprism';
-local version = '260305';
+// Upstream release tag. Drives both the runtime docker image (date-only,
+// `photoprism/photoprism:<date>`) and the source tarball pulled by build-fork.sh
+// (`refs/tags/<date>-<sha>.tar.gz`).
+local upstream_release = '260305-fad9d5395';
+local upstream_release_date = std.split(upstream_release, '-')[0];
+local version = upstream_release_date;
+// Build env image. Photoprism publishes develop:<build-date>-<flavor> on its own
+// rolling cadence; pick the closest jammy snapshot to upstream_release_date so
+// the toolchain glibc matches the runtime image's bundled glibc.
+local upstream_build = '260303-jammy';
 local platform = '26.04.10';
 local debian = 'bookworm-slim';
 local python = '3.12-slim-bookworm';
@@ -54,7 +63,10 @@ local build(arch, test_ui) = [{
     },
     {
       name: 'photoprism fork',
-      image: 'photoprism/develop:260303-jammy',
+      image: 'photoprism/develop:' + upstream_build,
+      environment: {
+        UPSTREAM_TAG: upstream_release,
+      },
       commands: [
         './photoprism/build-fork.sh',
       ],
