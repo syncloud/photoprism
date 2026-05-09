@@ -18,8 +18,9 @@ test.beforeAll(async () => {
 })
 
 test.describe('login', () => {
-  test('photoprism redirects to authelia and signs in', async ({ page }, testInfo) => {
+  test('continues with openid via authelia', async ({ page }, testInfo) => {
     await page.goto('/')
+    await page.locator('.action-oidc-login').click()
     await expect(page).toHaveURL(new RegExp(`^https://auth\\.${fullDomain.replace(/\./g, '\\.')}/`), { timeout: 30_000 })
     await page.locator('#username-textfield').fill(deviceUser)
     await page.locator('#password-textfield').fill(devicePassword)
