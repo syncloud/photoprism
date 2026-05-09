@@ -62,6 +62,13 @@ def test_index(app_domain):
     wait_for_rest(requests.session(), "https://{0}/api/v1/status".format(app_domain), 200, 10)
 
 
+def test_oidc_discovery_from_photoprism_snap(device, domain):
+    device.run_ssh(
+        'snap run --shell photoprism.cli -c "curl -sS -o {0}/oidc-discovery.json -w \'http=%{{http_code}} ssl=%{{ssl_verify_result}}\\n\' https://auth.{1}/.well-known/openid-configuration > {0}/oidc-discovery.txt 2>&1"'.format(TMP_DIR, domain),
+        throw=False,
+    )
+
+
 def __log_data_dir(device):
     device.run_ssh('ls -la /data')
     device.run_ssh('mount')
