@@ -45,7 +45,6 @@ def test_start(module_setup, device, device_host, app, domain):
     add_host_alias(app, device_host, domain)
     device.run_ssh('date', retries=100)
     device.run_ssh('mkdir {0}'.format(TMP_DIR))
-    device.run_ssh('echo "$(getent hosts {0} | awk \'{{print $1}}\') auth.{1}" >> /etc/hosts'.format(device_host, domain))
 
 
 def test_activate_device(device):
