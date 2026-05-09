@@ -14,6 +14,7 @@ import (
 const App = "photoprism"
 
 type Variables struct {
+	App          string
 	DataDir      string
 	AuthUrl      string
 	AppUrl       string
@@ -209,6 +210,7 @@ func (i *Installer) UpdateConfigs() error {
 	}
 
 	variables := Variables{
+		App:          App,
 		DataDir:      i.dataDir,
 		AuthUrl:      authUrl,
 		AppUrl:       appUrl,
