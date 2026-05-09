@@ -1,5 +1,5 @@
 local name = 'photoprism';
-local version = '240523';
+local version = '260305';
 local platform = '26.04.10';
 local debian = 'bookworm-slim';
 local python = '3.12-slim-bookworm';
@@ -54,7 +54,7 @@ local build(arch, test_ui) = [{
     },
     {
       name: 'photoprism fork',
-      image: 'photoprism/develop:260505-jammy',
+      image: 'photoprism/develop:260303-jammy',
       commands: [
         './photoprism/build-fork.sh',
       ],
