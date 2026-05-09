@@ -15,6 +15,7 @@ export default async function () {
   ssh(`journalctl > ${TMP_DIR}/journalctl.log`, { throw: false })
   ssh(`ls -la /var/snap/photoprism/current/config > ${TMP_DIR}/config.ls.log`, { throw: false })
   ssh(`cat /var/snap/photoprism/current/config/photoprism.env > ${TMP_DIR}/photoprism.env`, { throw: false })
+  ssh(`cat /var/snap/photoprism/current/config/options.yml > ${TMP_DIR}/options.yml`, { throw: false })
   ssh(`cat /proc/$(pgrep -of '/snap/photoprism/.*photoprism --config-path')/environ | tr '\\0' '\\n' > ${TMP_DIR}/photoprism.web.environ`, { throw: false })
   ssh(`ls -la /data/photoprism > ${TMP_DIR}/data.ls.log`, { throw: false })
   scpFrom(`${TMP_DIR}/*`, out, { throw: false })
