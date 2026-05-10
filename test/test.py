@@ -55,10 +55,6 @@ def test_activate_device(device):
 def test_ca_cert(device, domain):
     device.run_ssh('cp /var/snap/platform/current/syncloud.ca.crt /usr/local/share/ca-certificates')
     device.run_ssh('update-ca-certificates 2>&1 > {0}/update-ca-certificates.log'.format(TMP_DIR))
-    script = '/tmp/snap-tls-check.sh'
-    device.run_ssh("printf '%s\\n' '#!/bin/bash' 'stat -c %%y /etc/ssl/certs/ca-certificates.crt' 'grep -c \"BEGIN CERT\" /etc/ssl/certs/ca-certificates.crt' 'curl -sS -v https://auth.{0}/.well-known/openid-configuration > /dev/null 2>&1; echo curl=$?' > {1}".format(domain, script))
-    device.run_ssh('chmod +x {0}'.format(script))
-    device.run_ssh('snap run --shell photoprism.cli -c {0} > {1}/snap-tls-check.txt 2>&1'.format(script, TMP_DIR), throw=False)
 
 
 def test_install(app_archive_path, device_host, device_password):
@@ -67,6 +63,13 @@ def test_install(app_archive_path, device_host, device_password):
 
 def test_index(app_domain):
     wait_for_rest(requests.session(), "https://{0}/api/v1/status".format(app_domain), 200, 10)
+
+
+def test_oidc_runtime_probe(device, domain, app_domain):
+    script = '/tmp/oidc-probe.sh'
+    device.run_ssh("printf '%s\\n' '#!/bin/bash' 'set +e' 'echo === bundle ===' 'stat -c %%y /etc/ssl/certs/ca-certificates.crt' 'grep -c \"BEGIN CERTIFICATE\" /etc/ssl/certs/ca-certificates.crt' 'echo === curl auth discovery ===' 'curl -sS -o /tmp/discovery.json -w \"http=%%{{http_code}}\\\\n\" https://auth.{0}/.well-known/openid-configuration' 'echo === curl photoprism oidc/login ===' 'curl -sS -o /dev/null -D - -k https://{1}/api/v1/oidc/login | head -10' > {2}".format(domain, app_domain, script))
+    device.run_ssh('chmod +x {0}'.format(script))
+    device.run_ssh('snap run --shell photoprism.cli -c {0} > {1}/oidc-runtime-probe.txt 2>&1'.format(script, TMP_DIR), throw=False)
 
 
 
