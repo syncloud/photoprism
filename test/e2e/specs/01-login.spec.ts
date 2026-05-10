@@ -1,6 +1,6 @@
 import { test, expect, Page } from '@playwright/test'
 import { addHostAlias } from '../helpers/hosts'
-import { deviceHost } from '../helpers/ssh'
+import { deviceHost, ssh } from '../helpers/ssh'
 import { shoot } from '../helpers/screenshot'
 
 const deviceUser = required('PLAYWRIGHT_DEVICE_USER')
@@ -33,6 +33,12 @@ test.describe('photoprism', () => {
 
   test('generated app password authenticates webdav', async ({ page, request }, testInfo) => {
     await signInViaOidc(page)
+
+    // OIDC_ROLE / OIDC_WEBDAV are pro/portal-gated in upstream CE: every new
+    // OIDC user lands as Guest with WebDAV disabled, regardless of env vars.
+    // Promote the user via the CLI so the app-password check below is testing
+    // the app-password mechanism, not the role gate.
+    ssh(`snap run photoprism.cli users mod ${deviceUser} --role admin --webdav`)
 
     await page.locator('.nav-settings').first().click()
     await page.getByRole('tab', { name: 'Account' }).click()
