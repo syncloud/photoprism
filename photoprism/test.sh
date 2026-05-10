@@ -14,3 +14,8 @@ ${BUILD_DIR}/bin/heif-convert -v
 ${BUILD_DIR}/bin/heif-convert --list-decoders
 
 ${BUILD_DIR}/bin/exiftool
+
+${BUILD_DIR}/bin/photoprism.sh --version
+${BUILD_DIR}/bin/photoprism.sh users mod --help
+
+strings ${BUILD_DIR}/opt/photoprism/bin/photoprism | grep -q PHOTOPRISM_LDAP_ENABLED
