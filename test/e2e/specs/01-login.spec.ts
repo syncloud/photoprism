@@ -18,7 +18,7 @@ async function signInViaOidc(page: Page) {
   await page.locator('#username-textfield').fill(deviceUser)
   await page.locator('#password-textfield').fill(devicePassword)
   await page.locator('#sign-in-button').click()
-  await expect(page.locator('.action-search')).toBeVisible({ timeout: 30_000 })
+  await expect(page.locator('.nav-browse').first()).toBeVisible({ timeout: 30_000 })
 }
 
 test.beforeAll(async () => {
