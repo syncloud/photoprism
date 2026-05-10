@@ -18,7 +18,7 @@ async function signIn(page: Page, user: string, password: string) {
   await page.locator('input[name="username"]').fill(user)
   await page.locator('input[name="password"]').fill(password)
   await page.locator('.action-confirm').click()
-  await expect(page.locator('.nav-browse').first()).toBeVisible({ timeout: 30_000 })
+  await expect(page.locator('.nav-sidebar')).toBeVisible({ timeout: 30_000 })
 }
 
 test.describe('photoprism', () => {
