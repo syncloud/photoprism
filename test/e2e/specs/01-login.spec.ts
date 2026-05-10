@@ -15,7 +15,6 @@ function required(name: string): string {
 
 async function signInViaOidc(page: Page) {
   await page.goto('/')
-  await page.locator('.action-oidc-login').click()
   await page.locator('#username-textfield').fill(deviceUser)
   await page.locator('#password-textfield').fill(devicePassword)
   await page.locator('#sign-in-button').click()
