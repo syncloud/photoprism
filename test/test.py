@@ -127,11 +127,8 @@ def test_upgrade(app_archive_path, device_host, device_password, app_domain):
     wait_for_rest(requests.session(), "https://{0}/api/v1/status".format(app_domain), 200, 10)
 
 
-def test_oidc_runtime_probe(device, domain, app_domain):
-    script = '/tmp/oidc-probe.sh'
-    device.run_ssh("printf '%s\\n' '#!/bin/bash' 'set +e' 'echo === bundle ===' 'stat -c %%y /etc/ssl/certs/ca-certificates.crt' 'grep -c \"BEGIN CERTIFICATE\" /etc/ssl/certs/ca-certificates.crt' 'echo === curl auth discovery ===' 'curl -sS -o /tmp/discovery.json -w \"http=%%{{http_code}}\\\\n\" https://auth.{0}/.well-known/openid-configuration' 'echo === curl photoprism oidc/login ===' 'curl -sS -o /dev/null -D - -k https://{1}/api/v1/oidc/login | head -10' > {2}".format(domain, app_domain, script))
-    device.run_ssh('chmod +x {0}'.format(script))
-    device.run_ssh('snap run --shell photoprism.cli -c {0} > {1}/oidc-runtime-probe.txt 2>&1'.format(script, TMP_DIR), throw=False)
+def test_oidc_runtime_probe(device):
+    device.run_ssh('snap run photoprism.cli users ls > {0}/photoprism-users.txt 2>&1'.format(TMP_DIR), throw=False)
 
 
 def retry(method, retries=10):
