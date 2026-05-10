@@ -52,13 +52,12 @@ def test_activate_device(device):
     assert response.status_code == 200, response.text
 
 
-def test_ca_cert(device, domain):
-    device.run_ssh('cp /var/snap/platform/current/syncloud.ca.crt /usr/local/share/ca-certificates')
-    device.run_ssh('update-ca-certificates 2>&1 > {0}/update-ca-certificates.log'.format(TMP_DIR))
-
-
 def test_install(app_archive_path, device_host, device_password):
     local_install(device_host, device_password, app_archive_path)
+
+
+def test_add_regular_user(device):
+    device.run_ssh('snap run platform.cli user add regularuser --password=regularpass123')
 
 
 def test_index(app_domain):
@@ -125,10 +124,6 @@ def test_reinstall(app_archive_path, device_host, device_password, app_domain):
 def test_upgrade(app_archive_path, device_host, device_password, app_domain):
     local_install(device_host, device_password, app_archive_path)
     wait_for_rest(requests.session(), "https://{0}/api/v1/status".format(app_domain), 200, 10)
-
-
-def test_oidc_runtime_probe(device):
-    device.run_ssh('snap run photoprism.cli users ls > {0}/photoprism-users.txt 2>&1'.format(TMP_DIR), throw=False)
 
 
 def retry(method, retries=10):

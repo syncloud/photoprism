@@ -14,11 +14,7 @@ import (
 const App = "photoprism"
 
 type Variables struct {
-	App          string
-	DataDir      string
-	AuthUrl      string
-	AppUrl       string
-	ClientSecret string
+	DataDir string
 }
 
 type Installer struct {
@@ -196,31 +192,10 @@ func (i *Installer) UpdateVersion() error {
 }
 
 func (i *Installer) UpdateConfigs() error {
-	authUrl, err := i.platformClient.GetAppUrl("auth")
-	if err != nil {
-		return err
-	}
-	appUrl, err := i.platformClient.GetAppUrl(App)
-	if err != nil {
-		return err
-	}
-	clientSecret, err := i.platformClient.RegisterOIDCClient(App, "/api/v1/oidc/redirect", false, "client_secret_basic")
-	if err != nil {
-		return err
-	}
-
-	variables := Variables{
-		App:          App,
-		DataDir:      i.dataDir,
-		AuthUrl:      authUrl,
-		AppUrl:       appUrl,
-		ClientSecret: clientSecret,
-	}
-
 	return config.Generate(
 		path.Join(i.appDir, "config"),
 		path.Join(i.dataDir, "config"),
-		variables,
+		Variables{DataDir: i.dataDir},
 	)
 }
 
