@@ -67,6 +67,14 @@ def test_oidc_discovery_from_photoprism_snap(device, domain):
         'curl -sS -v https://auth.{0}/.well-known/openid-configuration > {1}/oidc-discovery.txt 2>&1; echo exit=$? >> {1}/oidc-discovery.txt'.format(domain, TMP_DIR),
         throw=False,
     )
+    device.run_ssh(
+        'curl -sS -v -k https://auth.{0}/.well-known/openid-configuration > {1}/oidc-discovery-insecure.txt 2>&1; echo exit=$? >> {1}/oidc-discovery-insecure.txt'.format(domain, TMP_DIR),
+        throw=False,
+    )
+    device.run_ssh(
+        'openssl s_client -connect auth.{0}:443 -servername auth.{0} -verify_return_error -CAfile /var/snap/platform/current/syncloud.ca.crt -showcerts < /dev/null > {1}/oidc-tls.txt 2>&1'.format(domain, TMP_DIR),
+        throw=False,
+    )
 
 
 def __log_data_dir(device):
