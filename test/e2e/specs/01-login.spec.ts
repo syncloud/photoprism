@@ -35,6 +35,7 @@ test.describe('photoprism', () => {
     await signInViaOidc(page)
 
     await page.locator('.nav-settings').first().click()
+    await page.getByRole('tab', { name: 'Account' }).click()
     await page.locator('.action-apps-dialog').click()
     await page.locator('.action-add').click()
     await page.locator('input[name="client_name"]').fill('e2e webdav')
