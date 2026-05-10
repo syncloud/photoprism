@@ -55,10 +55,10 @@ def test_activate_device(device):
 def test_ca_cert(device, domain):
     device.run_ssh('cp /var/snap/platform/current/syncloud.ca.crt /usr/local/share/ca-certificates')
     device.run_ssh('update-ca-certificates 2>&1 > {0}/update-ca-certificates.log'.format(TMP_DIR))
-    device.run_ssh(
-        'snap run --shell photoprism.cli -c "stat -c %y /etc/ssl/certs/ca-certificates.crt; grep -c \\"BEGIN CERT\\" /etc/ssl/certs/ca-certificates.crt; curl -sS -o /dev/null -w \\"http=%{http_code}\\\\n\\" https://auth.{1}/.well-known/openid-configuration" > {0}/snap-tls-check.txt 2>&1'.format(TMP_DIR, domain),
-        throw=False,
-    )
+    script = '/tmp/snap-tls-check.sh'
+    device.run_ssh("printf '%s\\n' '#!/bin/bash' 'stat -c %%y /etc/ssl/certs/ca-certificates.crt' 'grep -c \"BEGIN CERT\" /etc/ssl/certs/ca-certificates.crt' 'curl -sS -v https://auth.{0}/.well-known/openid-configuration > /dev/null 2>&1; echo curl=$?' > {1}".format(domain, script))
+    device.run_ssh('chmod +x {0}'.format(script))
+    device.run_ssh('snap run --shell photoprism.cli -c {0} > {1}/snap-tls-check.txt 2>&1'.format(script, TMP_DIR), throw=False)
 
 
 def test_install(app_archive_path, device_host, device_password):
