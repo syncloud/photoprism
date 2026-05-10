@@ -45,13 +45,16 @@ def test_start(module_setup, device, device_host, app, domain):
     add_host_alias(app, device_host, domain)
     device.run_ssh('date', retries=100)
     device.run_ssh('mkdir {0}'.format(TMP_DIR))
-    device.run_ssh('cp /var/snap/platform/current/syncloud.ca.crt /usr/local/share/ca-certificates')
-    device.run_ssh('update-ca-certificates 2>&1 > {0}/update-ca-certificates.log'.format(TMP_DIR))
 
 
 def test_activate_device(device):
     response = retry(device.activate_custom)
     assert response.status_code == 200, response.text
+
+
+def test_ca_cert(device):
+    device.run_ssh('cp /var/snap/platform/current/syncloud.ca.crt /usr/local/share/ca-certificates')
+    device.run_ssh('update-ca-certificates 2>&1 > {0}/update-ca-certificates.log'.format(TMP_DIR))
 
 
 def test_install(app_archive_path, device_host, device_password):
@@ -62,19 +65,6 @@ def test_index(app_domain):
     wait_for_rest(requests.session(), "https://{0}/api/v1/status".format(app_domain), 200, 10)
 
 
-def test_oidc_discovery_from_photoprism_snap(device, domain):
-    device.run_ssh(
-        'curl -sS -v https://auth.{0}/.well-known/openid-configuration > {1}/oidc-discovery.txt 2>&1; echo exit=$? >> {1}/oidc-discovery.txt'.format(domain, TMP_DIR),
-        throw=False,
-    )
-    device.run_ssh(
-        'curl -sS -v -k https://auth.{0}/.well-known/openid-configuration > {1}/oidc-discovery-insecure.txt 2>&1; echo exit=$? >> {1}/oidc-discovery-insecure.txt'.format(domain, TMP_DIR),
-        throw=False,
-    )
-    device.run_ssh(
-        'openssl s_client -connect auth.{0}:443 -servername auth.{0} -verify_return_error -CAfile /var/snap/platform/current/syncloud.ca.crt -showcerts < /dev/null > {1}/oidc-tls.txt 2>&1'.format(domain, TMP_DIR),
-        throw=False,
-    )
 
 
 def __log_data_dir(device):
