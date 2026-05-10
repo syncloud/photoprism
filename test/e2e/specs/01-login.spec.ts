@@ -14,12 +14,12 @@ function required(name: string): string {
 }
 
 async function signInViaOidc(page: Page) {
-  await page.goto('/api/v1/oidc/login')
-  await page.waitForURL(new RegExp(`^https://auth\\.${fullDomain.replace(/\./g, '\\.')}/`), { timeout: 30_000 })
+  await page.goto('/')
+  await page.locator('.action-oidc-login').click()
   await page.locator('#username-textfield').fill(deviceUser)
   await page.locator('#password-textfield').fill(devicePassword)
   await page.locator('#sign-in-button').click()
-  await page.waitForURL(/\/library\/(?!login)/, { timeout: 30_000 })
+  await expect(page.locator('.action-search')).toBeVisible({ timeout: 30_000 })
 }
 
 test.beforeAll(async () => {
@@ -35,18 +35,15 @@ test.describe('photoprism', () => {
   test('generated app password authenticates webdav', async ({ page, request }, testInfo) => {
     await signInViaOidc(page)
 
-    const tokenResp = await page.request.post('/api/v1/oauth/token', {
-      headers: { 'Content-Type': 'application/json' },
-      data: {
-        grant_type: 'session',
-        client_name: 'e2e webdav',
-        scope: 'webdav',
-        expires_in: 0,
-        username: deviceUser,
-      },
-    })
-    expect(tokenResp.status()).toBe(200)
-    const token = (await tokenResp.json()).access_token as string
+    await page.locator('.nav-settings').first().click()
+    await page.locator('.action-apps-dialog').click()
+    await page.locator('.action-add').click()
+    await page.locator('input[name="client_name"]').fill('e2e webdav')
+    await page.locator('.input-scope').click()
+    await page.getByRole('option', { name: 'WebDAV' }).click()
+    await page.locator('.action-generate').click()
+    const token = await page.locator('.input-app-password input').inputValue()
+    await shoot(page, testInfo, 'app-password-generated')
     expect(token).toBeTruthy()
 
     const auth = 'Basic ' + Buffer.from(`${deviceUser}:${token}`).toString('base64')
