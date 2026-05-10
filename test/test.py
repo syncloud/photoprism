@@ -64,7 +64,7 @@ def test_index(app_domain):
 
 def test_oidc_discovery_from_photoprism_snap(device, domain):
     device.run_ssh(
-        'snap run --shell photoprism.cli -c "curl -sS -o {0}/oidc-discovery.json -w \'http=%{{http_code}} ssl=%{{ssl_verify_result}}\\n\' https://auth.{1}/.well-known/openid-configuration > {0}/oidc-discovery.txt 2>&1"'.format(TMP_DIR, domain),
+        'curl -sS -v https://auth.{0}/.well-known/openid-configuration > {1}/oidc-discovery.txt 2>&1; echo exit=$? >> {1}/oidc-discovery.txt'.format(domain, TMP_DIR),
         throw=False,
     )
 
