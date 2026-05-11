@@ -1,15 +1,21 @@
 #!/bin/bash -ex
 
 DIR=$( cd "$( dirname "$0" )" && pwd )
+BUILD_DIR=${DIR}/../build/snap/photoprism
+
+if [ -z "$UPSTREAM_TAG" ]; then
+  echo "UPSTREAM_TAG is required" >&2
+  exit 1
+fi
+
 cd ${DIR}
-BRANCH=develop
-#BRANCH=debug
-wget --progress=dot:giga https://github.com/cyberb/photoprism/archive/refs/heads/$BRANCH.tar.gz
-tar xf $BRANCH.tar.gz
-mv photoprism-$BRANCH photoprism-fork
-cd photoprism-fork
+wget --progress=dot:giga https://github.com/photoprism/photoprism/archive/refs/tags/${UPSTREAM_TAG}.tar.gz
+tar xf ${UPSTREAM_TAG}.tar.gz
+mv photoprism-${UPSTREAM_TAG} photoprism-src
+
+cd photoprism-src
+patch -p1 < ${DIR}/ldap.patch
 make dep-tensorflow
 make build-go
 
-BUILD_DIR=${DIR}/../build/snap/photoprism
-cp ${DIR}/photoprism-fork/photoprism ${BUILD_DIR}/opt/photoprism/bin/photoprism
+cp photoprism ${BUILD_DIR}/opt/photoprism/bin/photoprism

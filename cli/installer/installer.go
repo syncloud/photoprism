@@ -192,20 +192,11 @@ func (i *Installer) UpdateVersion() error {
 }
 
 func (i *Installer) UpdateConfigs() error {
-	variables := Variables{
-		DataDir: i.dataDir,
-	}
-
-	err := config.Generate(
+	return config.Generate(
 		path.Join(i.appDir, "config"),
 		path.Join(i.dataDir, "config"),
-		variables,
+		Variables{DataDir: i.dataDir},
 	)
-	if err != nil {
-		return err
-	}
-
-	return nil
 }
 
 func (i *Installer) BackupPreStop() error {

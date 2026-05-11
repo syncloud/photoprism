@@ -1,5 +1,7 @@
 local name = 'photoprism';
-local version = '240523';
+local version = '260305';
+local upstream_source = '260305-fad9d5395';
+local upstream_build = '260303-jammy';
 local platform = '26.04.10';
 local debian = 'bookworm-slim';
 local python = '3.12-slim-bookworm';
@@ -52,6 +54,16 @@ local build(arch, test_ui) = [{
         './photoprism/build.sh',
       ],
     },
+    {
+      name: 'photoprism fork',
+      image: 'photoprism/develop:' + upstream_build,
+      environment: {
+        UPSTREAM_TAG: upstream_source,
+      },
+      commands: [
+        './photoprism/build-fork.sh',
+      ],
+    },
   ] + [
     {
       name: 'photoprism test ' + distro,
@@ -102,6 +114,8 @@ local build(arch, test_ui) = [{
              PLAYWRIGHT_FULL_DOMAIN: distro_default + '.com',
              PLAYWRIGHT_APP_DOMAIN: name + '.' + distro_default + '.com',
              PLAYWRIGHT_DEVICE_HOST: name + '.' + distro_default + '.com',
+             PLAYWRIGHT_DEVICE_USER: 'user',
+             PLAYWRIGHT_DEVICE_PASSWORD: 'Password1',
              PLAYWRIGHT_ARTIFACT_DIR: '/drone/src/artifact',
            },
            commands: [
@@ -182,10 +196,7 @@ local build(arch, test_ui) = [{
     },
   ],
   trigger: {
-    event: [
-      'push',
-      'pull_request',
-    ],
+    event: ['push'],
   },
   services: [
     {
