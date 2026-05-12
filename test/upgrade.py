@@ -50,9 +50,7 @@ def test_seed_pictures_before_upgrade(device):
 
 
 def test_pictures_visible_before_upgrade(device):
-    output = device.run_ssh('snap run photoprism.cli find')
-    for _, name in PRE_UPGRADE_IMAGES:
-        assert name in output, "expected {0} visible before upgrade".format(name)
+    assert_originals_present(device, "before upgrade")
 
 
 def test_upgrade(device, device_host, device_password, app_archive_path, app_domain):
@@ -62,9 +60,16 @@ def test_upgrade(device, device_host, device_password, app_archive_path, app_dom
 
 
 def test_pictures_visible_after_upgrade(device):
-    output = device.run_ssh('snap run photoprism.cli find')
+    assert_originals_present(device, "after upgrade")
+
+
+def assert_originals_present(device, phase):
+    output = device.run_ssh(
+        "snap run photoprism.sql photoprism --batch --skip-column-names "
+        "--execute 'SELECT original_name FROM photos'"
+    )
     for _, name in PRE_UPGRADE_IMAGES:
-        assert name in output, "expected {0} visible after upgrade".format(name)
+        assert name in output, "expected {0} indexed {1}, got:\n{2}".format(name, phase, output)
 
 
 def test_reindex_after_upgrade_has_no_schema_errors(device):
