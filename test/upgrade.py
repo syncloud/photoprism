@@ -1,11 +1,21 @@
-import pytest
+import time
+from os.path import dirname, join
 from subprocess import check_output, run
+import pytest
+import requests
 from syncloudlib.integration.hosts import add_host_alias
 from syncloudlib.integration.installer import local_install
 from syncloudlib.http import wait_for_rest
-import requests
 
+DIR = dirname(__file__)
 TMP_DIR = '/tmp/syncloud'
+IMPORT_DIR = '/data/photoprism/photos/import'
+
+PRE_UPGRADE_IMAGES = [
+    (join(DIR, '20220831_001704_66A1ECB0.heic'), '20220831_001704_66A1ECB0.heic'),
+    (join(DIR, 'images/profile.jpeg'), 'profile.jpeg'),
+    (join(DIR, 'images/generated-big.png'), 'generated-big.png'),
+]
 
 
 @pytest.fixture(scope="session")
@@ -26,10 +36,45 @@ def test_start(module_setup, app, device_host, domain, device):
     device.run_ssh('mkdir {0}'.format(TMP_DIR), throw=False)
 
 
-def test_upgrade(device, device_user, device_password, device_host, app_archive_path, app_domain, app_dir):
+def test_install_from_store(device, app_domain):
     device.run_ssh('snap remove photoprism')
     device.run_ssh('snap install photoprism', retries=10)
+    wait_for_rest(requests.session(), "https://{0}".format(app_domain), 200, 100)
+
+
+def test_seed_pictures_before_upgrade(device):
+    for path, _ in PRE_UPGRADE_IMAGES:
+        device.scp_to_device(path, IMPORT_DIR, throw=True)
+    device.run_ssh('snap run photoprism.cli cp')
+    device.run_ssh('snap run photoprism.cli index')
+
+
+def test_pictures_visible_before_upgrade(device):
+    output = device.run_ssh('snap run photoprism.cli find')
+    for _, name in PRE_UPGRADE_IMAGES:
+        assert name in output, "expected {0} visible before upgrade".format(name)
+
+
+def test_upgrade(device, device_host, device_password, app_archive_path, app_domain):
+    device.run_ssh('journalctl --vacuum-time=1s', throw=False)
     local_install(device_host, device_password, app_archive_path)
     wait_for_rest(requests.session(), "https://{0}".format(app_domain), 200, 100)
 
 
+def test_pictures_visible_after_upgrade(device):
+    output = device.run_ssh('snap run photoprism.cli find')
+    for _, name in PRE_UPGRADE_IMAGES:
+        assert name in output, "expected {0} visible after upgrade".format(name)
+
+
+def test_reindex_after_upgrade_has_no_schema_errors(device):
+    device.run_ssh('snap run photoprism.cli index')
+    device.run_ssh('snap run photoprism.cli vision run')
+    time.sleep(3)
+    journal = device.run_ssh(
+        "journalctl -u snap.photoprism.web --no-pager",
+        throw=False,
+    )
+    assert "Unknown column" not in journal, (
+        "post-upgrade workers hit schema errors — migrate didn't run on refresh"
+    )
