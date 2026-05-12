@@ -80,7 +80,7 @@ func (d *Database) Execute(sql string) error {
 }
 
 func (d *Database) Migrate() error {
-	return d.executor.Run(fmt.Sprintf("%s/bin/cli.sh", d.appDir), "migrate")
+	return d.executor.RunAs(d.user, fmt.Sprintf("%s/bin/cli.sh", d.appDir), "migrate")
 }
 
 func (d *Database) Restore() error {
