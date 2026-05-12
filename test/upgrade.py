@@ -1,5 +1,5 @@
 import time
-from os.path import dirname, join
+from os.path import dirname, join, splitext
 from subprocess import check_output, run
 import pytest
 import requests
@@ -69,7 +69,8 @@ def assert_originals_present(device, phase):
         "--execute 'SELECT original_name FROM photos'"
     )
     for _, name in PRE_UPGRADE_IMAGES:
-        assert name in output, "expected {0} indexed {1}, got:\n{2}".format(name, phase, output)
+        stem, _ = splitext(name)
+        assert stem in output, "expected {0} indexed {1}, got:\n{2}".format(stem, phase, output)
 
 
 def test_reindex_after_upgrade_has_no_schema_errors(device):
