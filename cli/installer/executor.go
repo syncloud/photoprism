@@ -1,13 +1,9 @@
 package installer
 
 import (
-	"fmt"
 	"go.uber.org/zap"
 	"os/exec"
-	"os/user"
-	"strconv"
 	"strings"
-	"syscall"
 )
 
 type Executor struct {
@@ -25,23 +21,8 @@ func (e *Executor) Run(app string, args ...string) error {
 }
 
 func (e *Executor) RunAs(username string, app string, args ...string) error {
-	u, err := user.Lookup(username)
-	if err != nil {
-		return fmt.Errorf("lookup user %s: %w", username, err)
-	}
-	uid, err := strconv.Atoi(u.Uid)
-	if err != nil {
-		return fmt.Errorf("parse uid for %s: %w", username, err)
-	}
-	gid, err := strconv.Atoi(u.Gid)
-	if err != nil {
-		return fmt.Errorf("parse gid for %s: %w", username, err)
-	}
-	cmd := exec.Command(app, args...)
-	cmd.SysProcAttr = &syscall.SysProcAttr{
-		Credential: &syscall.Credential{Uid: uint32(uid), Gid: uint32(gid)},
-	}
-	return e.run(cmd)
+	sudoArgs := append([]string{"-H", "-u", username, app}, args...)
+	return e.run(exec.Command("/usr/bin/sudo", sudoArgs...))
 }
 
 func (e *Executor) run(cmd *exec.Cmd) error {
