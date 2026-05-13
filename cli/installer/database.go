@@ -79,6 +79,10 @@ func (d *Database) Execute(sql string) error {
 	return d.executor.Run(fmt.Sprintf("%s/bin/sql.sh", d.appDir), "--abort-source-on-error", "--execute", sql)
 }
 
+func (d *Database) Migrate() error {
+	return d.executor.RunAs(d.user, fmt.Sprintf("%s/bin/cli.sh", d.appDir), "migrate")
+}
+
 func (d *Database) Restore() error {
 	if _, err := os.Stat(d.backupFile); errors.Is(err, os.ErrNotExist) {
 		d.logger.Warn("backup file does not exist", zap.String("file", d.backupFile))

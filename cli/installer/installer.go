@@ -95,6 +95,11 @@ func (i *Installer) Configure() error {
 		}
 	}
 
+	err = i.database.Migrate()
+	if err != nil {
+		return err
+	}
+
 	return i.UpdateVersion()
 }
 

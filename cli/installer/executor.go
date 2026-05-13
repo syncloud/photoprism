@@ -17,7 +17,15 @@ func NewExecutor(logger *zap.Logger) *Executor {
 }
 
 func (e *Executor) Run(app string, args ...string) error {
-	cmd := exec.Command(app, args...)
+	return e.run(exec.Command(app, args...))
+}
+
+func (e *Executor) RunAs(username string, app string, args ...string) error {
+	sudoArgs := append([]string{"-H", "-u", username, app}, args...)
+	return e.run(exec.Command("/usr/bin/sudo", sudoArgs...))
+}
+
+func (e *Executor) run(cmd *exec.Cmd) error {
 	e.logger.Info("executing", zap.String("cmd", cmd.String()))
 	out, err := cmd.CombinedOutput()
 	e.logger.Info("command output")
