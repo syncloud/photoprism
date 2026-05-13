@@ -1,4 +1,5 @@
-from os.path import dirname, join, splitext
+import hashlib
+from os.path import dirname, join
 from subprocess import check_output, run
 import pytest
 import requests
@@ -62,16 +63,26 @@ def test_pictures_visible_after_upgrade(device):
     assert_originals_present(device, "after upgrade")
 
 
+def file_sha1(path):
+    h = hashlib.sha1()
+    with open(path, 'rb') as f:
+        for chunk in iter(lambda: f.read(65536), b''):
+            h.update(chunk)
+    return h.hexdigest()
+
+
 def assert_originals_present(device, phase):
     output = device.run_ssh('snap run photoprism.cli find --json')
-    for _, name in PRE_UPGRADE_IMAGES:
-        stem, _ = splitext(name)
-        assert stem in output, "expected {0} indexed {1}, got:\n{2}".format(stem, phase, output)
+    for path, name in PRE_UPGRADE_IMAGES:
+        checksum = file_sha1(path)
+        assert checksum in output, "expected {0} ({1}) indexed {2}, got:\n{3}".format(name, checksum, phase, output)
 
 
 def test_new_picture_scanned_after_upgrade(device):
-    device.scp_to_device(join(DIR, 'images/post-upgrade.png'), IMPORT_DIR, throw=True)
+    path = join(DIR, 'images/post-upgrade.png')
+    device.scp_to_device(path, IMPORT_DIR, throw=True)
     device.run_ssh('snap run photoprism.cli cp')
     device.run_ssh('snap run photoprism.cli index')
     output = device.run_ssh('snap run photoprism.cli find --json')
-    assert 'post-upgrade' in output, "new image not indexed after upgrade, got:\n{0}".format(output)
+    checksum = file_sha1(path)
+    assert checksum in output, "new image ({0}) not indexed after upgrade, got:\n{1}".format(checksum, output)
