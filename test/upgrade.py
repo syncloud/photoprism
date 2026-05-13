@@ -1,6 +1,5 @@
-import time
 from os.path import dirname, join, splitext
-from subprocess import check_output, run
+from subprocess import check_call, check_output, run
 import pytest
 import requests
 from syncloudlib.integration.hosts import add_host_alias
@@ -73,14 +72,28 @@ def assert_originals_present(device, phase):
         assert stem in output, "expected {0} indexed {1}, got:\n{2}".format(stem, phase, output)
 
 
-def test_reindex_after_upgrade_has_no_schema_errors(device):
+def test_new_picture_scanned_after_upgrade(device, tmp_path):
+    new_name = 'post-upgrade.png'
+    local = str(tmp_path / new_name)
+    check_call(
+        'head -c 30000 /dev/urandom | convert -depth 8 -size 100x100 RGB:- {0}'.format(local),
+        shell=True,
+    )
+    device.scp_to_device(local, IMPORT_DIR, throw=True)
+    device.run_ssh('snap run photoprism.cli cp')
     device.run_ssh('snap run photoprism.cli index')
-    device.run_ssh('snap run photoprism.cli vision run')
-    time.sleep(3)
-    journal = device.run_ssh(
-        "journalctl -u snap.photoprism.web --no-pager",
-        throw=False,
+    output = device.run_ssh(
+        "snap run photoprism.sql photoprism --batch --skip-column-names "
+        "--execute 'SELECT original_name FROM photos'"
     )
-    assert "Unknown column" not in journal, (
-        "post-upgrade workers hit schema errors — migrate didn't run on refresh"
-    )
+    stem, _ = splitext(new_name)
+    assert stem in output, "new image not indexed after upgrade, got:\n{0}".format(output)
+
+
+def test_migrated_columns_present_after_upgrade(device):
+    for column in ('photo_caption', 'indexed_at'):
+        output = device.run_ssh(
+            "snap run photoprism.sql photoprism --batch --skip-column-names "
+            "--execute 'SHOW COLUMNS FROM photos LIKE \"{0}\"'".format(column)
+        )
+        assert column in output, "photos.{0} missing after upgrade — migrate didn't run".format(column)
