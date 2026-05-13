@@ -1,5 +1,5 @@
 from os.path import dirname, join, splitext
-from subprocess import check_call, check_output, run
+from subprocess import check_output, run
 import pytest
 import requests
 from syncloudlib.integration.hosts import add_host_alias
@@ -72,22 +72,15 @@ def assert_originals_present(device, phase):
         assert stem in output, "expected {0} indexed {1}, got:\n{2}".format(stem, phase, output)
 
 
-def test_new_picture_scanned_after_upgrade(device, tmp_path):
-    new_name = 'post-upgrade.png'
-    local = str(tmp_path / new_name)
-    check_call(
-        'head -c 30000 /dev/urandom | convert -depth 8 -size 100x100 RGB:- {0}'.format(local),
-        shell=True,
-    )
-    device.scp_to_device(local, IMPORT_DIR, throw=True)
+def test_new_picture_scanned_after_upgrade(device):
+    device.scp_to_device(join(DIR, 'images/post-upgrade.png'), IMPORT_DIR, throw=True)
     device.run_ssh('snap run photoprism.cli cp')
     device.run_ssh('snap run photoprism.cli index')
     output = device.run_ssh(
         "snap run photoprism.sql photoprism --batch --skip-column-names "
         "--execute 'SELECT original_name FROM photos'"
     )
-    stem, _ = splitext(new_name)
-    assert stem in output, "new image not indexed after upgrade, got:\n{0}".format(output)
+    assert 'post-upgrade' in output, "new image not indexed after upgrade, got:\n{0}".format(output)
 
 
 def test_migrated_columns_present_after_upgrade(device):
