@@ -63,10 +63,7 @@ def test_pictures_visible_after_upgrade(device):
 
 
 def assert_originals_present(device, phase):
-    output = device.run_ssh(
-        "snap run photoprism.sql photoprism --batch --skip-column-names "
-        "--execute 'SELECT original_name FROM photos'"
-    )
+    output = device.run_ssh('snap run photoprism.cli find --json')
     for _, name in PRE_UPGRADE_IMAGES:
         stem, _ = splitext(name)
         assert stem in output, "expected {0} indexed {1}, got:\n{2}".format(stem, phase, output)
@@ -76,8 +73,5 @@ def test_new_picture_scanned_after_upgrade(device):
     device.scp_to_device(join(DIR, 'images/post-upgrade.png'), IMPORT_DIR, throw=True)
     device.run_ssh('snap run photoprism.cli cp')
     device.run_ssh('snap run photoprism.cli index')
-    output = device.run_ssh(
-        "snap run photoprism.sql photoprism --batch --skip-column-names "
-        "--execute 'SELECT original_name FROM photos'"
-    )
+    output = device.run_ssh('snap run photoprism.cli find --json')
     assert 'post-upgrade' in output, "new image not indexed after upgrade, got:\n{0}".format(output)
