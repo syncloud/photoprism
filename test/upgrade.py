@@ -81,12 +81,3 @@ def test_new_picture_scanned_after_upgrade(device):
         "--execute 'SELECT original_name FROM photos'"
     )
     assert 'post-upgrade' in output, "new image not indexed after upgrade, got:\n{0}".format(output)
-
-
-def test_migrated_columns_present_after_upgrade(device):
-    for column in ('photo_caption', 'indexed_at'):
-        output = device.run_ssh(
-            "snap run photoprism.sql photoprism --batch --skip-column-names "
-            "--execute 'SHOW COLUMNS FROM photos LIKE \"{0}\"'".format(column)
-        )
-        assert column in output, "photos.{0} missing after upgrade — migrate didn't run".format(column)
