@@ -10,10 +10,7 @@ export default defineConfig({
   workers: 1,
   retries: 0,
   maxFailures: 1,
-  reporter: [
-    ['list'],
-    ['html', { open: 'never', outputFolder: `${artifactDir}/playwright/report` }],
-  ],
+  reporter: [['list']],
   outputDir: `${artifactDir}/playwright/test-results`,
   globalTeardown: './globalTeardown.ts',
   timeout: 120_000,

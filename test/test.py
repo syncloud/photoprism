@@ -1,4 +1,3 @@
-import os
 from os.path import join, dirname
 from subprocess import check_output
 import time
@@ -32,10 +31,8 @@ def module_setup(request, device, app_dir, artifact_dir):
         device.run_ssh('ls -la /data > {0}/data.ls.log'.format(TMP_DIR), throw=False)
         device.run_ssh('ls -la /data/photoprism > {0}/data.photoprism.ls.log'.format(TMP_DIR), throw=False)
 
-        app_log_dir = join(artifact_dir, 'log')
-        os.mkdir(app_log_dir)
-        device.scp_from_device('/var/snap/photoprism/common/log/*.log', app_log_dir)
-        device.scp_from_device('{0}/*'.format(TMP_DIR), app_log_dir)
+        device.scp_from_device('/var/snap/photoprism/common/log/*.log', artifact_dir)
+        device.scp_from_device('{0}/*'.format(TMP_DIR), artifact_dir)
         check_output('chmod -R a+r {0}'.format(artifact_dir), shell=True)
 
     request.addfinalizer(module_teardown)
