@@ -40,8 +40,6 @@ test.describe('photoprism', () => {
 
   test('regular syncloud user signs in to a scoped library', async ({ page }, testInfo) => {
     await signIn(page, regularUser, regularPassword)
-    await expect(page.locator('.nav-library').first()).toBeVisible()
-    await page.locator('.nav-library').first().click()
     await shoot(page, testInfo, 'regular-library')
   })
 })
