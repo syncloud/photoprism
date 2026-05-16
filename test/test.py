@@ -127,6 +127,7 @@ def test_upgrade(app_archive_path, device_host, device_password, app_domain):
 
 def test_seed_multi_user_photos(device):
     images = join(DIR, 'images')
+    device.run_ssh('rm -rf /data/photoprism/photos/originals/* /data/photoprism/cache/thumbnails/*')
     for name in ('admin-1.jpg', 'admin-2.jpg'):
         device.scp_to_device(join(images, name), '/data/photoprism/photos/originals/', throw=True)
     for user, files in (
@@ -138,7 +139,7 @@ def test_seed_multi_user_photos(device):
         for name in files:
             device.scp_to_device(join(images, name), target + '/', throw=True)
     device.run_ssh('chown -R photoprism:photoprism /data/photoprism/photos/originals')
-    device.run_ssh('snap run photoprism.cli index')
+    device.run_ssh('snap run photoprism.cli index --cleanup')
     output = device.run_ssh('snap run photoprism.cli find')
     for name in ('admin-1.jpg', 'admin-2.jpg', 'user1-1.jpg', 'user1-2.jpg', 'user2-1.jpg', 'user2-2.jpg'):
         assert name in output, '{0} missing from indexed originals:\n{1}'.format(name, output)
