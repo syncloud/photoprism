@@ -4,7 +4,6 @@ import { shoot } from '../helpers/screenshot'
 const deviceUser = required('PLAYWRIGHT_DEVICE_USER')
 const devicePassword = required('PLAYWRIGHT_DEVICE_PASSWORD')
 const appDomain = required('PLAYWRIGHT_APP_DOMAIN')
-const regularUser = 'regularuser'
 const regularPassword = 'regularpass123'
 
 function required(name: string): string {
@@ -21,11 +20,17 @@ async function signIn(page: Page, user: string, password: string) {
   await expect(page.locator('.nav-sidebar')).toBeVisible({ timeout: 30_000 })
 }
 
+async function openBrowse(page: Page, expectedThumbs: number) {
+  await page.locator('.nav-browse').first().click()
+  await expect(page.locator('.p-page-photos')).toBeVisible({ timeout: 30_000 })
+  await expect(page.locator('.photo-results .result-container')).toHaveCount(expectedThumbs, { timeout: 30_000 })
+}
+
 test.describe('photoprism', () => {
-  test('admin signs in with syncloud password', async ({ page }, testInfo) => {
+  test('admin signs in and sees every user library', async ({ page }, testInfo) => {
     await signIn(page, deviceUser, devicePassword)
-    await expect(page.locator('.nav-library').first()).toBeVisible()
-    await shoot(page, testInfo, 'admin-logged-in')
+    await openBrowse(page, 6)
+    await shoot(page, testInfo, 'admin-library')
   })
 
   test('webdav accepts syncloud password basic auth', async ({ request }) => {
@@ -38,8 +43,15 @@ test.describe('photoprism', () => {
     expect(resp.status()).toBe(207)
   })
 
-  test('regular syncloud user signs in to a scoped library', async ({ page }, testInfo) => {
-    await signIn(page, regularUser, regularPassword)
-    await shoot(page, testInfo, 'regular-library')
+  test('regularuser1 only sees their own pictures', async ({ page }, testInfo) => {
+    await signIn(page, 'regularuser1', regularPassword)
+    await openBrowse(page, 2)
+    await shoot(page, testInfo, 'regularuser1-library')
+  })
+
+  test('regularuser2 only sees their own pictures', async ({ page }, testInfo) => {
+    await signIn(page, 'regularuser2', regularPassword)
+    await openBrowse(page, 2)
+    await shoot(page, testInfo, 'regularuser2-library')
   })
 })
