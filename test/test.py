@@ -1,4 +1,3 @@
-import os
 from os.path import join, dirname
 from subprocess import check_output
 import time
@@ -32,10 +31,8 @@ def module_setup(request, device, app_dir, artifact_dir):
         device.run_ssh('ls -la /data > {0}/data.ls.log'.format(TMP_DIR), throw=False)
         device.run_ssh('ls -la /data/photoprism > {0}/data.photoprism.ls.log'.format(TMP_DIR), throw=False)
 
-        app_log_dir = join(artifact_dir, 'log')
-        os.mkdir(app_log_dir)
-        device.scp_from_device('/var/snap/photoprism/common/log/*.log', app_log_dir)
-        device.scp_from_device('{0}/*'.format(TMP_DIR), app_log_dir)
+        device.scp_from_device('/var/snap/photoprism/common/log/*.log', artifact_dir)
+        device.scp_from_device('{0}/*'.format(TMP_DIR), artifact_dir)
         check_output('chmod -R a+r {0}'.format(artifact_dir), shell=True)
 
     request.addfinalizer(module_teardown)
@@ -56,8 +53,9 @@ def test_install(app_archive_path, device_host, device_password):
     local_install(device_host, device_password, app_archive_path)
 
 
-def test_add_regular_user(device):
-    device.run_ssh('snap run platform.cli user add regularuser --password=regularpass123')
+def test_add_regular_users(device):
+    device.run_ssh('snap run platform.cli user add regularuser1 --password=regularpass123')
+    device.run_ssh('snap run platform.cli user add regularuser2 --password=regularpass123')
 
 
 def test_index(app_domain):
@@ -122,6 +120,26 @@ def test_reinstall(app_archive_path, device_host, device_password, app_domain):
 def test_upgrade(app_archive_path, device_host, device_password, app_domain):
     local_install(device_host, device_password, app_archive_path)
     wait_for_rest(requests.session(), "https://{0}".format(app_domain), 200, 10)
+
+
+def test_seed_multi_user_photos(device):
+    images = join(DIR, 'images')
+    device.run_ssh('rm -rf /data/photoprism/photos/originals/* /data/photoprism/cache/thumbnails/*')
+    for name in ('admin-1.jpg', 'admin-2.jpg'):
+        device.scp_to_device(join(images, name), '/data/photoprism/photos/originals/', throw=True)
+    for user, files in (
+        ('regularuser1', ('user1-1.jpg', 'user1-2.jpg')),
+        ('regularuser2', ('user2-1.jpg', 'user2-2.jpg')),
+    ):
+        target = '/data/photoprism/photos/originals/users/{0}'.format(user)
+        device.run_ssh('install -d -o photoprism -g photoprism {0}'.format(target))
+        for name in files:
+            device.scp_to_device(join(images, name), target + '/', throw=True)
+    device.run_ssh('chown -R photoprism:photoprism /data/photoprism/photos/originals')
+    device.run_ssh('snap run photoprism.cli index --cleanup')
+    output = device.run_ssh('snap run photoprism.cli find')
+    for name in ('admin-1.jpg', 'admin-2.jpg', 'user1-1.jpg', 'user1-2.jpg', 'user2-1.jpg', 'user2-2.jpg'):
+        assert name in output, '{0} missing from indexed originals:\n{1}'.format(name, output)
 
 
 def retry(method, retries=10):
