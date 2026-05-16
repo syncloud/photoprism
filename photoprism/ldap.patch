@@ -1,5 +1,5 @@
 From: Syncloud <support@syncloud.it>
-Subject: Add LDAP authentication on photoprism's shared auth path
+Subject: Add LDAP authentication and enable scoped multi-user libraries
 
 When PHOTOPRISM_LDAP_ENABLED=true, photoprism's shared `entity.Auth`
 binds the supplied credentials against the platform's slapd before
@@ -7,14 +7,22 @@ falling back to the upstream local-account flow. Hooks the same code
 path used by both the web sign-in form and the WebDAV basic-auth
 handler, so every syncloud client - web, PWA, third-party WebDAV - can
 authenticate with the user's syncloud password without any per-device
-app-password ceremony or OIDC ceremony. The patch is the syncloud
-cyberb fork's commit 1b9b9c8 rebased onto upstream tag
-260305-fad9d5395.
+app-password ceremony or OIDC ceremony. Non-admin syncloud users are
+created as photoprism RoleUser with BasePath=users/<handle>, which
+trips the per-user scoped-search branch in internal/entity/search and
+gives each account an isolated library. Photoprism CE's UserRoles
+whitelist and GrantDefaults map are extended to recognise RoleUser so
+the account passes IsRegistered() and CanLogIn() ACL checks. Original
+LDAP path is the syncloud cyberb fork's commit 1b9b9c8 rebased onto
+upstream tag 260305-fad9d5395.
 
 ---
+ internal/auth/acl/grant.go                 |  1 +
+ internal/auth/acl/roles.go                 |  1 +
+ internal/auth/acl/roles_test.go            |  2 +-
  internal/entity/auth_session_login.go      |  6 ++
- internal/entity/auth_session_login_ldap.go | 92 ++++++++++++++++++++++
- 2 files changed, 99 insertions(+)
+ internal/entity/auth_session_login_ldap.go | 93 ++++++++++++++++++++++
+ 5 files changed, 102 insertions(+), 1 deletion(-)
  create mode 100644 internal/entity/auth_session_login_ldap.go
 
 diff --git a/internal/entity/auth_session_login.go b/internal/entity/auth_session_login.go
@@ -131,3 +139,37 @@ new file mode 100644
 +	log.Infof("ldap: added user %s", clean.LogQuote(user.Username()))
 +	return user, nil
 +}
+diff --git a/internal/auth/acl/grant.go b/internal/auth/acl/grant.go
+--- a/internal/auth/acl/grant.go
++++ b/internal/auth/acl/grant.go
+@@ -156,6 +156,7 @@ var (
+ // GrantDefaults defines default grants for all supported roles.
+ var GrantDefaults = Roles{
+ 	RoleAdmin:    GrantFullAccess,
++	RoleUser:     GrantUploadAccess,
+ 	RoleGuest:    GrantReactShared,
+ 	RoleVisitor:  GrantViewShared,
+ 	RoleInstance: GrantSearchShared,
+diff --git a/internal/auth/acl/roles.go b/internal/auth/acl/roles.go
+--- a/internal/auth/acl/roles.go
++++ b/internal/auth/acl/roles.go
+@@ -11,6 +11,7 @@ type RoleStrings map[string]Role
+ // UserRoles maps valid user account roles.
+ var UserRoles = RoleStrings{
+ 	string(RoleAdmin):   RoleAdmin,
++	string(RoleUser):    RoleUser,
+ 	string(RoleGuest):   RoleGuest,
+ 	string(RoleVisitor): RoleVisitor,
+ 	string(RoleNone):    RoleNone,
+diff --git a/internal/auth/acl/roles_test.go b/internal/auth/acl/roles_test.go
+--- a/internal/auth/acl/roles_test.go
++++ b/internal/auth/acl/roles_test.go
+@@ -95,7 +95,7 @@ func TestRoleStrings_GlobalMaps_AliasNoneAndUsage(t *testing.T) {
+ 	})
+ 	t.Run("UserRolesStringsIncludeAliasNoneExcludeEmpty", func(t *testing.T) {
+ 		got := UserRoles.Strings()
+-		assert.ElementsMatch(t, []string{"admin", "guest", "none", "visitor"}, got)
++		assert.ElementsMatch(t, []string{"admin", "user", "guest", "none", "visitor"}, got)
+ 		for _, s := range got {
+ 			assert.NotEqual(t, "", s)
+ 		}
