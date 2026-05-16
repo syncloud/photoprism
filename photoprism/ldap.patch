@@ -14,7 +14,7 @@ cyberb fork's commit 1b9b9c8 rebased onto upstream tag
 ---
  internal/entity/auth_session_login.go      |  6 ++
  internal/entity/auth_session_login_ldap.go | 92 ++++++++++++++++++++++
- 2 files changed, 98 insertions(+)
+ 2 files changed, 99 insertions(+)
  create mode 100644 internal/entity/auth_session_login_ldap.go
 
 diff --git a/internal/entity/auth_session_login.go b/internal/entity/auth_session_login.go
@@ -37,7 +37,7 @@ diff --git a/internal/entity/auth_session_login_ldap.go b/internal/entity/auth_s
 new file mode 100644
 --- /dev/null
 +++ b/internal/entity/auth_session_login_ldap.go
-@@ -0,0 +1,92 @@
+@@ -0,0 +1,93 @@
 +package entity
 +
 +import (
@@ -120,6 +120,7 @@ new file mode 100644
 +		user.UserRole = acl.RoleAdmin.String()
 +	} else {
 +		user.UserRole = os.Getenv("PHOTOPRISM_LDAP_DEFAULT_USER_ROLE")
++		user.SetBasePath("~")
 +	}
 +	if err := Db().Transaction(func(tx *gorm.DB) error {
 +		return tx.Create(user).Error

@@ -38,17 +38,10 @@ test.describe('photoprism', () => {
     expect(resp.status()).toBe(207)
   })
 
-  test('non-admin syncloud user cannot sign in', async ({ page }, testInfo) => {
-    // photoprism CE treats non-admin LDAP users as Visitor role (the
-    // share-link role), and Visitor.IsRegistered() is false so web login
-    // is gated off. The credentials bind successfully against slapd and
-    // a user row is created, but the sign-in click does not navigate.
-    await page.goto('/')
-    await page.locator('input[name="username"]').fill(regularUser)
-    await page.locator('input[name="password"]').fill(regularPassword)
-    await page.locator('.action-confirm').click()
-    await expect(page.locator('input[name="username"]')).toBeVisible({ timeout: 5_000 })
-    await expect(page.locator('.nav-sidebar')).toHaveCount(0)
-    await shoot(page, testInfo, 'regular-rejected')
+  test('regular syncloud user signs in to a scoped library', async ({ page }, testInfo) => {
+    await signIn(page, regularUser, regularPassword)
+    await expect(page.locator('.nav-library').first()).toBeVisible()
+    await page.locator('.nav-library').first().click()
+    await shoot(page, testInfo, 'regular-library')
   })
 })
