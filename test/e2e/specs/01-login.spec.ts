@@ -23,7 +23,7 @@ async function signIn(page: Page, user: string, password: string) {
 async function openBrowse(page: Page, expectedThumbs: number) {
   await page.locator('.nav-browse').first().click()
   await expect(page.locator('.p-page-photos')).toBeVisible({ timeout: 30_000 })
-  await expect(page.locator('.photo-results .result-container')).toHaveCount(expectedThumbs, { timeout: 30_000 })
+  await expect(page.locator('.photo-results .media.result')).toHaveCount(expectedThumbs, { timeout: 30_000 })
 }
 
 test.describe('photoprism', () => {
