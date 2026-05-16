@@ -21,8 +21,8 @@ upstream tag 260305-fad9d5395.
  internal/auth/acl/roles.go                 |  1 +
  internal/auth/acl/roles_test.go            |  2 +-
  internal/entity/auth_session_login.go      |  6 ++
- internal/entity/auth_session_login_ldap.go | 93 ++++++++++++++++++++++
- 5 files changed, 102 insertions(+), 1 deletion(-)
+ internal/entity/auth_session_login_ldap.go | 119 ++++++++++++++++++++++++
+ 5 files changed, 128 insertions(+), 1 deletion(-)
  create mode 100644 internal/entity/auth_session_login_ldap.go
 
 diff --git a/internal/entity/auth_session_login.go b/internal/entity/auth_session_login.go
@@ -45,7 +45,7 @@ diff --git a/internal/entity/auth_session_login_ldap.go b/internal/entity/auth_s
 new file mode 100644
 --- /dev/null
 +++ b/internal/entity/auth_session_login_ldap.go
-@@ -0,0 +1,93 @@
+@@ -0,0 +1,119 @@
 +package entity
 +
 +import (
@@ -81,9 +81,35 @@ new file mode 100644
 +		if err != nil {
 +			return nil, provider, method, err, true
 +		}
++	} else if !isAdmin {
++		if err := migrateLdapUser(user); err != nil {
++			return nil, provider, method, err, true
++		}
 +	}
 +	user.UpdateLoginTime()
 +	return user, provider, method, nil, true
++}
++
++// migrateLdapUser brings a pre-existing LDAP row up to the current
++// non-admin contract: PHOTOPRISM_LDAP_DEFAULT_USER_ROLE plus a per-user
++// BasePath. Old releases stored these accounts as RoleVisitor with no
++// BasePath, which left them unable to sign in to the web UI; this
++// upgrades them on next login. Idempotent.
++func migrateLdapUser(user *User) error {
++	desiredRole := os.Getenv("PHOTOPRISM_LDAP_DEFAULT_USER_ROLE")
++	if user.UserRole == desiredRole && user.BasePath != "" && user.CanLogin && user.WebDAV {
++		return nil
++	}
++	user.UserRole = desiredRole
++	user.CanLogin = true
++	user.WebDAV = true
++	user.SetBasePath("~")
++	if err := Db().Save(user).Error; err != nil {
++		log.Errorln("ldap migrate user error", err)
++		return err
++	}
++	log.Infof("ldap: migrated user %s to role %s", clean.LogQuote(user.Username()), desiredRole)
++	return nil
 +}
 +
 +func authLdap(username, password string) (bool, error) {
