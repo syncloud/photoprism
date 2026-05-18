@@ -25,7 +25,8 @@ def add_regular_users(device):
 
 
 def seed_multi_user_photos(device, images_dir=IMAGES_DIR):
-    device.run_ssh('rm -rf {0}/* {1}/*'.format(ORIGINALS, THUMBNAILS))
+    device.run_ssh('snap run photoprism.cli reset --index --yes')
+    device.run_ssh('rm -rf {0}/* {0}/.photoprism {1}/*'.format(ORIGINALS, THUMBNAILS))
     for name in ADMIN_IMAGES:
         device.scp_to_device(join(images_dir, name), ORIGINALS + '/', throw=True)
     for user, files in USER_IMAGES:
