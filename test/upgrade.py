@@ -1,8 +1,10 @@
 import hashlib
+import os
 from os.path import dirname, join
 from subprocess import check_output, run
 import pytest
 import requests
+from PIL import Image
 from syncloudlib.integration.hosts import add_host_alias
 from syncloudlib.integration.installer import local_install
 from syncloudlib.http import wait_for_rest
@@ -45,6 +47,7 @@ def test_install_from_store(device, app_domain):
 
 
 def test_seed_pictures_before_upgrade(device):
+    _generate_random_png(join(DIR, 'images/generated-big.png'), 1000, 1000)
     for path, _ in PRE_UPGRADE_IMAGES:
         device.scp_to_device(path, IMPORT_DIR, throw=True)
     device.run_ssh('snap run photoprism.cli cp')
@@ -63,6 +66,10 @@ def test_upgrade(device, device_host, device_password, app_archive_path, app_dom
 
 def test_pictures_visible_after_upgrade(device):
     assert_originals_present(device, "after upgrade")
+
+
+def _generate_random_png(path, width, height):
+    Image.frombytes('RGB', (width, height), os.urandom(3 * width * height)).save(path)
 
 
 def file_sha1(path):
