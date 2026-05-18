@@ -7,6 +7,8 @@ from syncloudlib.integration.hosts import add_host_alias
 from syncloudlib.integration.installer import local_install
 from syncloudlib.http import wait_for_rest
 
+import seed
+
 DIR = dirname(__file__)
 TMP_DIR = '/tmp/syncloud'
 IMPORT_DIR = '/data/photoprism/photos/import'
@@ -86,3 +88,11 @@ def test_new_picture_scanned_after_upgrade(device):
     output = device.run_ssh('snap run photoprism.cli find --json')
     checksum = file_sha1(path)
     assert checksum in output, "new image ({0}) not indexed after upgrade, got:\n{1}".format(checksum, output)
+
+
+def test_add_regular_users_after_upgrade(device):
+    seed.add_regular_users(device)
+
+
+def test_seed_multi_user_photos_after_upgrade(device):
+    seed.seed_multi_user_photos(device)

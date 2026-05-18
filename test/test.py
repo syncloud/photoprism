@@ -8,6 +8,8 @@ from syncloudlib.http import wait_for_rest
 from syncloudlib.integration.hosts import add_host_alias
 from syncloudlib.integration.installer import local_install
 
+import seed
+
 DIR = dirname(__file__)
 TMP_DIR = '/tmp/syncloud'
 
@@ -54,8 +56,7 @@ def test_install(app_archive_path, device_host, device_password):
 
 
 def test_add_regular_users(device):
-    device.run_ssh('snap run platform.cli user add regularuser1 --password=regularpass123')
-    device.run_ssh('snap run platform.cli user add regularuser2 --password=regularpass123')
+    seed.add_regular_users(device)
 
 
 def test_index(app_domain):
@@ -123,23 +124,7 @@ def test_upgrade(app_archive_path, device_host, device_password, app_domain):
 
 
 def test_seed_multi_user_photos(device):
-    images = join(DIR, 'images')
-    device.run_ssh('rm -rf /data/photoprism/photos/originals/* /data/photoprism/cache/thumbnails/*')
-    for name in ('admin-1.jpg', 'admin-2.jpg'):
-        device.scp_to_device(join(images, name), '/data/photoprism/photos/originals/', throw=True)
-    for user, files in (
-        ('regularuser1', ('user1-1.jpg', 'user1-2.jpg')),
-        ('regularuser2', ('user2-1.jpg', 'user2-2.jpg')),
-    ):
-        target = '/data/photoprism/photos/originals/users/{0}'.format(user)
-        device.run_ssh('install -d -o photoprism -g photoprism {0}'.format(target))
-        for name in files:
-            device.scp_to_device(join(images, name), target + '/', throw=True)
-    device.run_ssh('chown -R photoprism:photoprism /data/photoprism/photos/originals')
-    device.run_ssh('snap run photoprism.cli index --cleanup')
-    output = device.run_ssh('snap run photoprism.cli find')
-    for name in ('admin-1.jpg', 'admin-2.jpg', 'user1-1.jpg', 'user1-2.jpg', 'user2-1.jpg', 'user2-2.jpg'):
-        assert name in output, '{0} missing from indexed originals:\n{1}'.format(name, output)
+    seed.seed_multi_user_photos(device)
 
 
 def retry(method, retries=10):

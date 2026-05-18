@@ -14,6 +14,29 @@ local distros = ['bookworm', 'buster'];
 local platform_image(distro, arch) =
   'syncloud/platform-' + distro + '-' + arch + ':' + platform;
 
+local e2e_step(step_name, generate_big_image) = {
+  name: step_name,
+  image: 'mcr.microsoft.com/playwright:v1.48.2-jammy',
+  environment: {
+    PLAYWRIGHT_FULL_DOMAIN: distro_default + '.com',
+    PLAYWRIGHT_APP_DOMAIN: name + '.' + distro_default + '.com',
+    PLAYWRIGHT_DEVICE_HOST: name + '.' + distro_default + '.com',
+    PLAYWRIGHT_DEVICE_USER: 'user',
+    PLAYWRIGHT_DEVICE_PASSWORD: 'Password1',
+    PLAYWRIGHT_ARTIFACT_DIR: '/drone/src/artifact/' + step_name,
+  },
+  commands: [
+    'apt-get update -qq && apt-get install -y -qq sshpass openssh-client imagemagick curl',
+    'cd test',
+  ] + (if generate_big_image then [
+         'head -c $((3*1000*1000)) /dev/urandom | convert -depth 8 -size 1000x1000 RGB:- images/generated-big.png',
+       ] else []) + [
+    'cd e2e',
+    'npm ci --no-audit --no-fund',
+    'npx playwright test --project=desktop',
+  ],
+};
+
 local build(arch, test_ui) = [{
   kind: 'pipeline',
   type: 'docker',
@@ -106,28 +129,7 @@ local build(arch, test_ui) = [{
       ],
     }
     for distro in distros
-  ] + (if test_ui then [
-         {
-           name: 'e2e',
-           image: 'mcr.microsoft.com/playwright:v1.48.2-jammy',
-           environment: {
-             PLAYWRIGHT_FULL_DOMAIN: distro_default + '.com',
-             PLAYWRIGHT_APP_DOMAIN: name + '.' + distro_default + '.com',
-             PLAYWRIGHT_DEVICE_HOST: name + '.' + distro_default + '.com',
-             PLAYWRIGHT_DEVICE_USER: 'user',
-             PLAYWRIGHT_DEVICE_PASSWORD: 'Password1',
-             PLAYWRIGHT_ARTIFACT_DIR: '/drone/src/artifact',
-           },
-           commands: [
-             'apt-get update -qq && apt-get install -y -qq sshpass openssh-client imagemagick curl',
-             'cd test',
-             'head -c $((3*1000*1000)) /dev/urandom | convert -depth 8 -size 1000x1000 RGB:- images/generated-big.png',
-             'cd e2e',
-             'npm ci --no-audit --no-fund',
-             'npx playwright test --project=desktop',
-           ],
-         },
-       ] else []) + [
+  ] + (if test_ui then [e2e_step('e2e', true)] else []) + [
     {
       name: 'test-upgrade',
       image: 'python:' + python,
@@ -137,6 +139,7 @@ local build(arch, test_ui) = [{
         'py.test -x -s upgrade.py --distro=' + distro_default + ' --ver=$DRONE_BUILD_NUMBER --app=' + name,
       ],
     },
+  ] + (if test_ui then [e2e_step('e2e-after-upgrade', false)] else []) + [
     {
       name: 'upload',
       image: 'debian:' + debian,
