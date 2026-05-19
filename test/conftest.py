@@ -1,7 +1,10 @@
+import sys
 from os.path import dirname, join
-from syncloudlib.integration.conftest import *
 
 DIR = dirname(__file__)
+sys.path.insert(0, DIR)
+
+from syncloudlib.integration.conftest import *
 
 
 @pytest.fixture(scope="session")

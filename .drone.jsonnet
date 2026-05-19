@@ -116,13 +116,11 @@ local build(arch, test_ui) = [{
              PLAYWRIGHT_DEVICE_HOST: name + '.' + distro_default + '.com',
              PLAYWRIGHT_DEVICE_USER: 'user',
              PLAYWRIGHT_DEVICE_PASSWORD: 'Password1',
-             PLAYWRIGHT_ARTIFACT_DIR: '/drone/src/artifact',
+             PLAYWRIGHT_ARTIFACT_DIR: '/drone/src/artifact/e2e',
            },
            commands: [
-             'apt-get update -qq && apt-get install -y -qq sshpass openssh-client imagemagick curl',
-             'cd test',
-             'head -c $((3*1000*1000)) /dev/urandom | convert -depth 8 -size 1000x1000 RGB:- images/generated-big.png',
-             'cd e2e',
+             'apt-get update -qq && apt-get install -y -qq sshpass openssh-client curl',
+             'cd test/e2e',
              'npm ci --no-audit --no-fund',
              'npx playwright test --project=desktop',
            ],
@@ -137,6 +135,26 @@ local build(arch, test_ui) = [{
         'py.test -x -s upgrade.py --distro=' + distro_default + ' --ver=$DRONE_BUILD_NUMBER --app=' + name,
       ],
     },
+  ] + (if test_ui then [
+         {
+           name: 'e2e-after-upgrade',
+           image: 'mcr.microsoft.com/playwright:v1.48.2-jammy',
+           environment: {
+             PLAYWRIGHT_FULL_DOMAIN: distro_default + '.com',
+             PLAYWRIGHT_APP_DOMAIN: name + '.' + distro_default + '.com',
+             PLAYWRIGHT_DEVICE_HOST: name + '.' + distro_default + '.com',
+             PLAYWRIGHT_DEVICE_USER: 'user',
+             PLAYWRIGHT_DEVICE_PASSWORD: 'Password1',
+             PLAYWRIGHT_ARTIFACT_DIR: '/drone/src/artifact/e2e-after-upgrade',
+           },
+           commands: [
+             'apt-get update -qq && apt-get install -y -qq sshpass openssh-client curl',
+             'cd test/e2e',
+             'npm ci --no-audit --no-fund',
+             'npx playwright test --project=desktop',
+           ],
+         },
+       ] else []) + [
     {
       name: 'upload',
       image: 'debian:' + debian,

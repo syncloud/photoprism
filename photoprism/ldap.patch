@@ -176,6 +176,17 @@ diff --git a/internal/auth/acl/grant.go b/internal/auth/acl/grant.go
  	RoleGuest:    GrantReactShared,
  	RoleVisitor:  GrantViewShared,
  	RoleInstance: GrantSearchShared,
+diff --git a/internal/auth/acl/rules.go b/internal/auth/acl/rules.go
+--- a/internal/auth/acl/rules.go
++++ b/internal/auth/acl/rules.go
+@@ -8,6 +8,7 @@ var RulesMutex = &sync.Mutex{}
+ var Rules = ACL{
+ 	ResourceFiles: Roles{
+ 		RoleAdmin:  GrantFullAccess,
++		RoleUser:   GrantUploadAccess,
+ 		RoleClient: GrantFullAccess,
+ 	},
+ 	ResourceFolders: Roles{
 diff --git a/internal/auth/acl/roles.go b/internal/auth/acl/roles.go
 --- a/internal/auth/acl/roles.go
 +++ b/internal/auth/acl/roles.go
