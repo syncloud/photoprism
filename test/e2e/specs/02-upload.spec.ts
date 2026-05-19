@@ -28,6 +28,7 @@ test.describe('photoprism upload', () => {
     await page.locator('.p-page-photos .action-menu__btn').click()
     await page.locator('.action-menu__item.action-upload').click()
     await expect(page.locator('.p-upload-dialog')).toBeVisible({ timeout: 10_000 })
+    await shoot(page, testInfo, 'regularuser1-upload-dialog')
 
     await page.locator('.p-upload-dialog .input-upload').setInputFiles(uploadImage)
     await expect(page.locator('.p-upload-dialog')).toBeHidden({ timeout: 120_000 })
