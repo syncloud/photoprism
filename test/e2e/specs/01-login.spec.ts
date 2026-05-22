@@ -54,4 +54,19 @@ test.describe('photoprism', () => {
     await openBrowse(page, 2)
     await shoot(page, testInfo, 'regularuser2-library')
   })
+
+  test('regularuser1 sees favorites + places nav and routes load', async ({ page }, testInfo) => {
+    await signIn(page, 'regularuser1', regularPassword)
+    await expect(page.locator('.nav-favorites').first()).toBeVisible()
+    await expect(page.locator('.nav-places').first()).toBeVisible()
+
+    await page.locator('.nav-favorites').first().click()
+    await expect(page).toHaveURL(/\/favorites/, { timeout: 30_000 })
+    await expect(page.locator('.photo-results .media.result')).toHaveCount(0)
+    await shoot(page, testInfo, 'regularuser1-favorites-empty')
+
+    await page.locator('.nav-places').first().click()
+    await expect(page).toHaveURL(/\/places/, { timeout: 30_000 })
+    await shoot(page, testInfo, 'regularuser1-places')
+  })
 })
