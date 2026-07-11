@@ -21,3 +21,4 @@ DatabasePassword: photoprism
 Theme: lavendel
 Language: english
 IndexSchedule: "@every 3h"
+Workers: 2
