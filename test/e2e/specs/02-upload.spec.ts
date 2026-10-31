@@ -2,16 +2,13 @@ import { test, expect, Page } from '@playwright/test'
 import * as path from 'node:path'
 import { shoot } from '../helpers/screenshot'
 import { ssh } from '../helpers/ssh'
+import { signIn } from '../helpers/auth'
 
 const regularPassword = 'regularpass123'
 const uploadImage = path.resolve(process.cwd(), '../images/user1-upload.jpg')
 
-async function signIn(page: Page, user: string, password: string) {
-  await page.goto('/')
-  await page.locator('input[name="username"]').fill(user)
-  await page.locator('input[name="password"]').fill(password)
-  await page.locator('.action-confirm').click()
-  await expect(page.locator('.nav-sidebar')).toBeVisible({ timeout: 30_000 })
+function originals(): string[] {
+  return ssh('find /data/photoprism/photos/originals/users/regularuser1 -type f').trim().split('\n').filter(Boolean)
 }
 
 async function openBrowse(page: Page, expectedThumbs: number) {
@@ -30,15 +27,15 @@ test.describe('photoprism upload', () => {
     await expect(page.locator('.p-upload-dialog')).toBeVisible({ timeout: 10_000 })
     await shoot(page, testInfo, 'regularuser1-upload-dialog')
 
-    await page.locator('.p-upload-dialog .input-upload').setInputFiles(uploadImage)
+    await page.locator('.p-upload-dialog .input-file-upload input[type="file"]').setInputFiles(uploadImage)
+    await page.locator('.p-upload-dialog .action-upload').click()
+    await expect.poll(() => originals().length, { timeout: 120_000 }).toBeGreaterThanOrEqual(3)
     await expect(page.locator('.p-upload-dialog')).toBeHidden({ timeout: 120_000 })
 
     await page.reload()
     await openBrowse(page, 3)
     await shoot(page, testInfo, 'regularuser1-after-upload')
 
-    const listing = ssh('find /data/photoprism/photos/originals/users/regularuser1 -type f')
-    const files = listing.trim().split('\n').filter(Boolean)
-    expect(files.length, `expected >=3 files under regularuser1 originals, got:\n${listing}`).toBeGreaterThanOrEqual(3)
+    expect(originals().length).toBeGreaterThanOrEqual(3)
   })
 })

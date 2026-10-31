@@ -1,0 +1,670 @@
+diff --git a/internal/api/oidc_redirect.go b/internal/api/oidc_redirect.go
+index 5490329..421e099 100644
+--- a/internal/api/oidc_redirect.go
++++ b/internal/api/oidc_redirect.go
+@@ -296,6 +296,11 @@ func OIDCRedirect(router *gin.RouterGroup) {
+ 			event.LoginError(clientIp, "oidc", oidcUser.UserName, userAgent, authn.ErrUsernameRequiredToRegister.Error())
+ 			c.HTML(http.StatusUnauthorized, "auth.gohtml", CreateSessionError(http.StatusUnauthorized, i18n.ErrInvalidCredentials))
+ 			return
++		} else if err = entity.LinkLdapUser(oidcUser); err != nil {
++			event.AuditErr([]string{clientIp, "create session", "oidc", clean.LogQuote(oidcUser.UserName), authn.ErrAccountUpdateFailed.Error(), status.Error(err)})
++			event.LoginError(clientIp, "oidc", oidcUser.UserName, userAgent, authn.ErrAccountUpdateFailed.Error()+" ("+clean.Error(err)+")")
++			c.HTML(http.StatusUnauthorized, "auth.gohtml", CreateSessionError(http.StatusUnauthorized, i18n.ErrInvalidCredentials))
++			return
+ 		} else if user = entity.FindUser(oidcUser); user != nil {
+ 			// Ensure user has a username.
+ 			if user.Username() == "" {
+@@ -414,6 +419,8 @@ func OIDCRedirect(router *gin.RouterGroup) {
+ 				user.SetRole(role.String())
+ 			}
+ 
++			user.EnsureUserBasePath()
++
+ 			// Update Subject ID and Issuer URI.
+ 			user.SetAuthID(userInfo.Subject, provider.Issuer())
+ 
+@@ -531,6 +538,7 @@ func OIDCRedirect(router *gin.RouterGroup) {
+ 
+ 			// Set user role and permissions.
+ 			user.SetRole(newUserRole.String())
++			user.EnsureUserBasePath()
+ 			user.CanLogin = true
+ 			user.WebDAV = conf.OIDCWebDAV()
+ 
+diff --git a/internal/auth/acl/grant.go b/internal/auth/acl/grant.go
+index 18b01fa..20feeb9 100644
+--- a/internal/auth/acl/grant.go
++++ b/internal/auth/acl/grant.go
+@@ -156,6 +156,7 @@ var (
+ // GrantDefaults defines default grants for all supported roles.
+ var GrantDefaults = Roles{
+ 	RoleAdmin:    GrantFullAccess,
++	RoleUser:     GrantUploadAccess,
+ 	RoleGuest:    GrantReactShared,
+ 	RoleVisitor:  GrantViewShared,
+ 	RoleInstance: GrantSearchShared,
+diff --git a/internal/auth/acl/roles.go b/internal/auth/acl/roles.go
+index 84b33cb..a866ebe 100644
+--- a/internal/auth/acl/roles.go
++++ b/internal/auth/acl/roles.go
+@@ -14,6 +14,7 @@ type RoleStrings map[string]Role
+ // UserRoles maps valid user account roles.
+ var UserRoles = RoleStrings{
+ 	string(RoleAdmin):   RoleAdmin,
++	string(RoleUser):    RoleUser,
+ 	string(RoleGuest):   RoleGuest,
+ 	string(RoleVisitor): RoleVisitor,
+ 	string(RoleNone):    RoleNone,
+diff --git a/internal/auth/acl/roles_test.go b/internal/auth/acl/roles_test.go
+index 7139d8c..90fd039 100644
+--- a/internal/auth/acl/roles_test.go
++++ b/internal/auth/acl/roles_test.go
+@@ -29,6 +29,7 @@ func TestRoleStrings_Attr(t *testing.T) {
+ 			&list.KeyValue{Key: "admin", Value: RoleAdmin.String()},
+ 			&list.KeyValue{Key: "guest", Value: RoleGuest.String()},
+ 			&list.KeyValue{Key: "none", Value: RoleNone.String()},
++			&list.KeyValue{Key: "user", Value: RoleUser.String()},
+ 			&list.KeyValue{Key: "visitor", Value: RoleVisitor.String()},
+ 		}
+ 		assert.Equal(t, expected, got)
+@@ -171,7 +172,7 @@ func TestRoleStrings_GlobalMaps_AliasNoneAndUsage(t *testing.T) {
+ 	})
+ 	t.Run("UserRolesStringsExcludeAliasNoneEmptyAndVisitor", func(t *testing.T) {
+ 		got := UserRoles.Strings()
+-		assert.ElementsMatch(t, []string{"admin", "guest"}, got)
++		assert.ElementsMatch(t, []string{"admin", "guest", "user"}, got)
+ 		assert.NotContains(t, got, "none")
+ 		assert.NotContains(t, got, "visitor")
+ 		for _, s := range got {
+@@ -194,7 +195,7 @@ func TestRoleStrings_GlobalMaps_AliasNoneAndUsage(t *testing.T) {
+ 		}
+ 		assert.NotContains(t, u, "none")
+ 		assert.NotContains(t, u, "visitor")
+-		assert.Regexp(t, ` or guest$`, u)
++		assert.Regexp(t, ` or user$`, u)
+ 	})
+ 	t.Run("AliasNoneMapsToRoleNone", func(t *testing.T) {
+ 		assert.Equal(t, RoleNone, ClientRoles[RoleAliasNone])
+diff --git a/internal/auth/acl/rules.go b/internal/auth/acl/rules.go
+index 458cc75..1b99968 100644
+--- a/internal/auth/acl/rules.go
++++ b/internal/auth/acl/rules.go
+@@ -9,6 +9,7 @@ var RulesMutex = &sync.Mutex{}
+ var Rules = ACL{
+ 	ResourceFiles: Roles{
+ 		RoleAdmin:   GrantFullAccess,
++		RoleUser:    GrantUploadAccess,
+ 		RoleGuest:   GrantViewShared,
+ 		RoleVisitor: GrantViewShared,
+ 		RoleClient:  GrantFullAccess,
+@@ -27,6 +28,7 @@ var Rules = ACL{
+ 	ResourceVideos: GrantDefaults,
+ 	ResourceFavorites: Roles{
+ 		RoleAdmin:  GrantFullAccess,
++		RoleUser:   GrantUploadAccess,
+ 		RoleClient: GrantFullAccess,
+ 	},
+ 	ResourceAlbums: GrantDefaults,
+@@ -48,6 +50,7 @@ var Rules = ACL{
+ 	},
+ 	ResourcePlaces: Roles{
+ 		RoleAdmin:    GrantFullAccess,
++		RoleUser:     GrantUploadAccess,
+ 		RoleGuest:    GrantReactShared,
+ 		RoleVisitor:  GrantViewShared,
+ 		RoleInstance: GrantUseOwn,
+diff --git a/internal/auth/oidc/http_client.go b/internal/auth/oidc/http_client.go
+index 9eef4a7..156aef2 100644
+--- a/internal/auth/oidc/http_client.go
++++ b/internal/auth/oidc/http_client.go
+@@ -2,6 +2,8 @@ package oidc
+ 
+ import (
+ 	"net/http"
++	"net/url"
++	"os"
+ 	"time"
+ 
+ 	"github.com/photoprism/photoprism/internal/event"
+@@ -12,13 +14,30 @@ import (
+ // default transport with a LoggingRoundTripper and keeps a 30s timeout.
+ func HttpClient(debug bool) *http.Client {
+ 	if debug {
++		transport := socketTransport()
++
++		if transport == nil {
++			transport = http.DefaultTransport
++		}
++
+ 		return &http.Client{
+-			Transport: LoggingRoundTripper{http.DefaultTransport},
++			Transport: LoggingRoundTripper{transport},
+ 			Timeout:   time.Second * 30,
+ 		}
+ 	}
+ 
+-	return &http.Client{Timeout: 30 * time.Second}
++	return &http.Client{Transport: socketTransport(), Timeout: 30 * time.Second}
++}
++
++func socketTransport() http.RoundTripper {
++	socket := os.Getenv("PHOTOPRISM_OIDC_SOCKET")
++	issuer, err := url.Parse(os.Getenv("PHOTOPRISM_OIDC_URI"))
++
++	if socket == "" || err != nil || issuer.Host == "" {
++		return nil
++	}
++
++	return NewSocketTransport(socket, issuer.Host, http.DefaultTransport)
+ }
+ 
+ // LoggingRoundTripper wraps an http.RoundTripper and emits audit logs for OIDC requests.
+diff --git a/internal/auth/oidc/socket_transport.go b/internal/auth/oidc/socket_transport.go
+new file mode 100644
+index 0000000..9e89faf
+--- /dev/null
++++ b/internal/auth/oidc/socket_transport.go
+@@ -0,0 +1,40 @@
++package oidc
++
++import (
++	"context"
++	"net"
++	"net/http"
++)
++
++type SocketTransport struct {
++	host   string
++	socket http.RoundTripper
++	proxy  http.RoundTripper
++}
++
++func NewSocketTransport(socket, host string, proxy http.RoundTripper) *SocketTransport {
++	return &SocketTransport{
++		host: host,
++		socket: &http.Transport{
++			DialContext: func(ctx context.Context, _, _ string) (net.Conn, error) {
++				var dialer net.Dialer
++				return dialer.DialContext(ctx, "unix", socket)
++			},
++		},
++		proxy: proxy,
++	}
++}
++
++func (t *SocketTransport) RoundTrip(req *http.Request) (*http.Response, error) {
++	if req.URL.Host != t.host {
++		return t.proxy.RoundTrip(req)
++	}
++
++	viaSocket := req.Clone(req.Context())
++	viaSocket.URL.Scheme = "http"
++	viaSocket.Host = t.host
++	viaSocket.Header.Set("X-Forwarded-Proto", "https")
++	viaSocket.Header.Set("X-Forwarded-Host", t.host)
++
++	return t.socket.RoundTrip(viaSocket)
++}
+diff --git a/internal/auth/oidc/socket_transport_test.go b/internal/auth/oidc/socket_transport_test.go
+new file mode 100644
+index 0000000..9756d00
+--- /dev/null
++++ b/internal/auth/oidc/socket_transport_test.go
+@@ -0,0 +1,56 @@
++package oidc
++
++import (
++	"fmt"
++	"io"
++	"net"
++	"net/http"
++	"net/http/httptest"
++	"path/filepath"
++	"testing"
++
++	"github.com/stretchr/testify/assert"
++	"github.com/stretchr/testify/require"
++)
++
++func TestSocketTransport(t *testing.T) {
++	socket := filepath.Join(t.TempDir(), "auth.socket")
++	listener, err := net.Listen("unix", socket)
++	require.NoError(t, err)
++
++	server := &http.Server{Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
++		_, _ = fmt.Fprintf(w, "socket %s %s %s", r.Host, r.Header.Get("X-Forwarded-Proto"), r.Header.Get("X-Forwarded-Host"))
++	})}
++	go func() { _ = server.Serve(listener) }()
++	defer server.Close()
++
++	network := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
++		_, _ = fmt.Fprint(w, "network")
++	}))
++	defer network.Close()
++
++	client := &http.Client{Transport: NewSocketTransport(socket, "auth.example.com", http.DefaultTransport)}
++
++	t.Run("IssuerHostGoesThroughSocket", func(t *testing.T) {
++		resp, err := client.Get("https://auth.example.com/.well-known/openid-configuration")
++		require.NoError(t, err)
++		defer resp.Body.Close()
++		body, err := io.ReadAll(resp.Body)
++		require.NoError(t, err)
++		assert.Equal(t, "socket auth.example.com https auth.example.com", string(body))
++	})
++	t.Run("OtherHostsUseNetwork", func(t *testing.T) {
++		resp, err := client.Get(network.URL)
++		require.NoError(t, err)
++		defer resp.Body.Close()
++		body, err := io.ReadAll(resp.Body)
++		require.NoError(t, err)
++		assert.Equal(t, "network", string(body))
++	})
++	t.Run("HttpClientUsesSocketWhenConfigured", func(t *testing.T) {
++		t.Setenv("PHOTOPRISM_OIDC_SOCKET", socket)
++		t.Setenv("PHOTOPRISM_OIDC_URI", "https://auth.example.com")
++		assert.IsType(t, &SocketTransport{}, HttpClient(false).Transport)
++		assert.IsType(t, LoggingRoundTripper{}, HttpClient(true).Transport)
++	})
++}
+diff --git a/internal/config/flags.go b/internal/config/flags.go
+index 960103e..9a66014 100644
+--- a/internal/config/flags.go
++++ b/internal/config/flags.go
+@@ -153,6 +153,12 @@ var Flags = CliFlags{
+ 			EnvVars: EnvVars("OIDC_GROUP_ROLE"),
+ 			Hidden:  true,
+ 		}}, {
++		Flag: &cli.StringFlag{
++			Name:    "oidc-role",
++			Usage:   "default `ROLE` for new OpenID Connect users",
++			EnvVars: EnvVars("OIDC_ROLE"),
++			Hidden:  true,
++		}}, {
+ 		Flag: &cli.BoolFlag{
+ 			Name:    "oidc-webdav",
+ 			Usage:   "allows new OpenID Connect users to use WebDAV when they have a role that allows it",
+diff --git a/internal/entity/auth_session_login.go b/internal/entity/auth_session_login.go
+index a14fbf3..ee0f0cd 100644
+--- a/internal/entity/auth_session_login.go
++++ b/internal/entity/auth_session_login.go
+@@ -25,6 +25,11 @@ var Auth = func(frm form.Login, s *Session, c *gin.Context) (user *User, provide
+ 	// Get sanitized username from login form.
+ 	nameName := frm.CleanUsername()
+ 
++	if user = AuthLdap(nameName, frm.Password); user != nil {
++		user.UpdateLoginTime()
++		return user, authn.ProviderLDAP, authn.MethodDefault, nil
++	}
++
+ 	// Find registered user account.
+ 	user = FindUserByExactName(nameName)
+ 
+diff --git a/internal/entity/auth_session_login_ldap.go b/internal/entity/auth_session_login_ldap.go
+new file mode 100644
+index 0000000..1313d50
+--- /dev/null
++++ b/internal/entity/auth_session_login_ldap.go
+@@ -0,0 +1,78 @@
++package entity
++
++import (
++	"os"
++	"strings"
++
++	"github.com/go-ldap/ldap/v3"
++
++	"github.com/photoprism/photoprism/internal/auth/acl"
++	"github.com/photoprism/photoprism/pkg/clean"
++	"github.com/photoprism/photoprism/pkg/rnd"
++)
++
++var LdapBind = func(username, password string) (admin bool, err error) {
++	conn, err := ldap.DialURL(os.Getenv("PHOTOPRISM_LDAP_URI"))
++	if err != nil {
++		return false, err
++	}
++	defer conn.Close()
++
++	if err = conn.Bind(strings.ReplaceAll(os.Getenv("PHOTOPRISM_LDAP_BIND_DN"), "{username}", ldap.EscapeDN(username)), password); err != nil {
++		return false, err
++	}
++
++	result, err := conn.Search(ldap.NewSearchRequest(
++		os.Getenv("PHOTOPRISM_LDAP_ADMIN_GROUP_DN"),
++		ldap.ScopeBaseObject, ldap.NeverDerefAliases, 0, 0, false,
++		strings.ReplaceAll(os.Getenv("PHOTOPRISM_LDAP_ADMIN_GROUP_FILTER"), "{username}", ldap.EscapeFilter(username)),
++		[]string{"dn"},
++		nil,
++	))
++	if err != nil {
++		return false, err
++	}
++
++	return len(result.Entries) > 0, nil
++}
++
++func AuthLdap(userName, password string) *User {
++	if os.Getenv("PHOTOPRISM_LDAP_URI") == "" || userName == "" || password == "" || rnd.IsAppPassword(password, false) {
++		return nil
++	}
++
++	admin, err := LdapBind(userName, password)
++	if err != nil {
++		log.Debugf("ldap: %s did not sign in (%s)", clean.LogQuote(userName), clean.Error(err))
++		return nil
++	}
++
++	if user := FindUserByExactName(userName); user != nil {
++		if !user.CanLogIn() || !user.IsLdapAccount() {
++			return nil
++		}
++		return user
++	}
++
++	user := NewUser()
++	user.UserName = userName
++	user.CanLogin = true
++	user.WebDAV = true
++
++	if admin {
++		user.SuperAdmin = true
++		user.UserRole = acl.RoleAdmin.String()
++	} else {
++		user.UserRole = acl.RoleUser.String()
++		user.SetBasePath("~")
++	}
++
++	if err = user.Create(); err != nil {
++		log.Errorf("ldap: failed to add account %s (%s)", clean.LogQuote(userName), clean.Error(err))
++		return nil
++	}
++
++	log.Infof("ldap: added account %s", clean.LogQuote(userName))
++
++	return user
++}
+diff --git a/internal/entity/auth_session_login_ldap_test.go b/internal/entity/auth_session_login_ldap_test.go
+new file mode 100644
+index 0000000..cc4c3bf
+--- /dev/null
++++ b/internal/entity/auth_session_login_ldap_test.go
+@@ -0,0 +1,99 @@
++package entity
++
++import (
++	"testing"
++
++	"github.com/stretchr/testify/assert"
++	"github.com/stretchr/testify/require"
++
++	"github.com/photoprism/photoprism/internal/auth/acl"
++	"github.com/photoprism/photoprism/internal/form"
++	"github.com/photoprism/photoprism/pkg/authn"
++)
++
++func useLdap(t *testing.T, directory *ldapDirectory) {
++	t.Setenv("PHOTOPRISM_LDAP_URI", "ldap://localhost:389")
++	bind := LdapBind
++	LdapBind = directory.bind
++	t.Cleanup(func() { LdapBind = bind })
++}
++
++func TestAuthLdap(t *testing.T) {
++	t.Run("AddsRegularUserWithOwnFolder", func(t *testing.T) {
++		useLdap(t, &ldapDirectory{passwords: map[string]string{"ldapfresh": "secret-1"}})
++
++		user, provider, _, err := Auth(form.Login{Username: "ldapfresh", Password: "secret-1"}, nil, nil)
++
++		require.NoError(t, err)
++		require.NotNil(t, user)
++		assert.Equal(t, authn.ProviderLDAP, provider)
++		assert.Equal(t, acl.RoleUser.String(), user.UserRole)
++		assert.Equal(t, "users/ldapfresh", user.BasePath)
++		assert.True(t, user.IsUnlinkedLdap())
++	})
++	t.Run("AddsAdminFromSyncloudGroup", func(t *testing.T) {
++		useLdap(t, &ldapDirectory{passwords: map[string]string{"ldapboss": "secret-2"}, admins: map[string]bool{"ldapboss": true}})
++
++		user, _, _, err := Auth(form.Login{Username: "ldapboss", Password: "secret-2"}, nil, nil)
++
++		require.NoError(t, err)
++		require.NotNil(t, user)
++		assert.True(t, user.SuperAdmin)
++		assert.Equal(t, acl.RoleAdmin.String(), user.UserRole)
++	})
++	t.Run("SignsInToAccountLinkedByOidc", func(t *testing.T) {
++		m := User{UserName: "ldapoidc", UserRole: acl.RoleUser.String(), CanLogin: true}
++		require.NoError(t, m.Create())
++		require.NoError(t, LinkLdapUser(oidcLogin("ldapoidc", "sub-ldapoidc")))
++		useLdap(t, &ldapDirectory{passwords: map[string]string{"ldapoidc": "secret-3"}})
++
++		user, _, _, err := Auth(form.Login{Username: "ldapoidc", Password: "secret-3"}, nil, nil)
++
++		require.NoError(t, err)
++		require.NotNil(t, user)
++		assert.Equal(t, m.UserUID, user.UserUID)
++		assert.Equal(t, authn.ProviderOIDC.String(), user.AuthProvider)
++	})
++	t.Run("KeepsSpacesInPassword", func(t *testing.T) {
++		useLdap(t, &ldapDirectory{passwords: map[string]string{"ldapspace": " secret 4 "}})
++
++		user, _, _, err := Auth(form.Login{Username: "ldapspace", Password: " secret 4 "}, nil, nil)
++
++		require.NoError(t, err)
++		assert.NotNil(t, user)
++	})
++	t.Run("RejectsWrongPassword", func(t *testing.T) {
++		useLdap(t, &ldapDirectory{passwords: map[string]string{"ldapwrong": "secret-5"}})
++
++		user, _, _, err := Auth(form.Login{Username: "ldapwrong", Password: "guess"}, nil, nil)
++
++		assert.Error(t, err)
++		assert.Nil(t, user)
++		assert.Nil(t, FindUserByExactName("ldapwrong"))
++	})
++	t.Run("LeavesLocalAccountAlone", func(t *testing.T) {
++		m := User{UserName: "ldaplocalonly", UserRole: acl.RoleAdmin.String(), AuthProvider: authn.ProviderLocal.String(), CanLogin: true}
++		require.NoError(t, m.Create())
++		require.NoError(t, m.SetPassword("local-password-6"))
++		useLdap(t, &ldapDirectory{passwords: map[string]string{"ldaplocalonly": "ldap-password-6"}})
++
++		_, _, _, err := Auth(form.Login{Username: "ldaplocalonly", Password: "ldap-password-6"}, nil, nil)
++
++		assert.Error(t, err)
++	})
++	t.Run("LeavesAppPasswordsToLocalAuth", func(t *testing.T) {
++		directory := &ldapDirectory{}
++		useLdap(t, directory)
++
++		assert.Nil(t, AuthLdap("ldapapp", "1234Ab-cdEFgh-IjKlmN-opQRst"))
++		assert.Zero(t, directory.binds)
++	})
++	t.Run("OffWithoutLdapUri", func(t *testing.T) {
++		directory := &ldapDirectory{passwords: map[string]string{"ldapoff": "secret-7"}}
++		useLdap(t, directory)
++		t.Setenv("PHOTOPRISM_LDAP_URI", "")
++
++		assert.Nil(t, AuthLdap("ldapoff", "secret-7"))
++		assert.Zero(t, directory.binds)
++	})
++}
+diff --git a/internal/entity/auth_user_syncloud.go b/internal/entity/auth_user_syncloud.go
+new file mode 100644
+index 0000000..4742bd8
+--- /dev/null
++++ b/internal/entity/auth_user_syncloud.go
+@@ -0,0 +1,42 @@
++package entity
++
++import (
++	"github.com/photoprism/photoprism/internal/auth/acl"
++	"github.com/photoprism/photoprism/pkg/authn"
++)
++
++func LinkLdapUser(oidcUser User) error {
++	if oidcUser.UserName == "" || oidcUser.AuthID == "" || FindUser(oidcUser) != nil {
++		return nil
++	}
++
++	user := FindUserByName(oidcUser.UserName)
++
++	if user == nil || !user.IsUnlinkedLdap() {
++		return nil
++	}
++
++	user.SetProvider(authn.ProviderOIDC)
++	user.SetAuthID(oidcUser.AuthID, oidcUser.AuthIssuer)
++
++	return user.Updates(Values{
++		"AuthProvider": user.AuthProvider,
++		"AuthMethod":   user.AuthMethod,
++		"AuthID":       user.AuthID,
++		"AuthIssuer":   user.AuthIssuer,
++	})
++}
++
++func (m *User) IsUnlinkedLdap() bool {
++	return m.ID > 1 && (m.AuthProvider == "" || authn.ProviderType(m.AuthProvider).IsDefault()) && m.AuthID == "" && FindPassword(m.UserUID) == nil
++}
++
++func (m *User) IsLdapAccount() bool {
++	return authn.ProviderType(m.AuthProvider).IsOIDC() || m.IsUnlinkedLdap()
++}
++
++func (m *User) EnsureUserBasePath() {
++	if m.AclRole() == acl.RoleUser && m.BasePath == "" {
++		m.SetBasePath("~")
++	}
++}
+diff --git a/internal/entity/auth_user_syncloud_test.go b/internal/entity/auth_user_syncloud_test.go
+new file mode 100644
+index 0000000..3a08e61
+--- /dev/null
++++ b/internal/entity/auth_user_syncloud_test.go
+@@ -0,0 +1,102 @@
++package entity
++
++import (
++	"testing"
++
++	"github.com/stretchr/testify/assert"
++	"github.com/stretchr/testify/require"
++
++	"github.com/photoprism/photoprism/internal/auth/acl"
++	"github.com/photoprism/photoprism/pkg/authn"
++)
++
++func oidcLogin(userName, subject string) User {
++	return User{
++		UserName:     userName,
++		AuthProvider: authn.ProviderOIDC.String(),
++		AuthIssuer:   "https://auth.example.com",
++		AuthID:       subject,
++	}
++}
++
++func TestLinkLdapUser(t *testing.T) {
++	t.Run("LinksAccountCreatedByLdap", func(t *testing.T) {
++		m := User{UserName: "ldaplinked", UserRole: acl.RoleUser.String(), CanLogin: true}
++		require.NoError(t, m.Create())
++
++		require.NoError(t, LinkLdapUser(oidcLogin("ldaplinked", "sub-ldaplinked")))
++
++		found := FindUser(oidcLogin("ldaplinked", "sub-ldaplinked"))
++		require.NotNil(t, found)
++		assert.Equal(t, m.UserUID, found.UserUID)
++		assert.Equal(t, authn.ProviderOIDC.String(), found.AuthProvider)
++	})
++	t.Run("LinksAccountCreatedByOlderLdap", func(t *testing.T) {
++		m := User{UserName: "ldapolder", UserRole: acl.RoleAdmin.String(), AuthProvider: authn.ProviderDefault.String(), SuperAdmin: true, CanLogin: true}
++		require.NoError(t, m.Create())
++
++		require.NoError(t, LinkLdapUser(oidcLogin("ldapolder", "sub-ldapolder")))
++
++		found := FindUser(oidcLogin("ldapolder", "sub-ldapolder"))
++		require.NotNil(t, found)
++		assert.Equal(t, m.UserUID, found.UserUID)
++		assert.Equal(t, authn.ProviderOIDC.String(), found.AuthProvider)
++	})
++	t.Run("SkipsOlderAccountWithPassword", func(t *testing.T) {
++		m := User{UserName: "ldapolderpassword", UserRole: acl.RoleUser.String(), AuthProvider: authn.ProviderDefault.String(), CanLogin: true}
++		require.NoError(t, m.Create())
++		require.NoError(t, m.SetPassword("local-password-1"))
++
++		require.NoError(t, LinkLdapUser(oidcLogin("ldapolderpassword", "sub-ldapolderpassword")))
++
++		assert.Nil(t, FindUser(oidcLogin("ldapolderpassword", "sub-ldapolderpassword")))
++	})
++	t.Run("SkipsAccountWithPassword", func(t *testing.T) {
++		m := User{UserName: "ldappassword", UserRole: acl.RoleUser.String(), CanLogin: true}
++		require.NoError(t, m.Create())
++		require.NoError(t, m.SetPassword("local-password-1"))
++
++		require.NoError(t, LinkLdapUser(oidcLogin("ldappassword", "sub-ldappassword")))
++
++		assert.Nil(t, FindUser(oidcLogin("ldappassword", "sub-ldappassword")))
++	})
++	t.Run("SkipsAccountWithProvider", func(t *testing.T) {
++		m := User{UserName: "ldaplocal", UserRole: acl.RoleUser.String(), AuthProvider: authn.ProviderLocal.String(), CanLogin: true}
++		require.NoError(t, m.Create())
++
++		require.NoError(t, LinkLdapUser(oidcLogin("ldaplocal", "sub-ldaplocal")))
++
++		assert.Nil(t, FindUser(oidcLogin("ldaplocal", "sub-ldaplocal")))
++	})
++	t.Run("KeepsExistingLink", func(t *testing.T) {
++		m := User{UserName: "ldapsecond", UserRole: acl.RoleUser.String(), CanLogin: true}
++		require.NoError(t, m.Create())
++		require.NoError(t, LinkLdapUser(oidcLogin("ldapsecond", "sub-first")))
++
++		require.NoError(t, LinkLdapUser(oidcLogin("ldapsecond", "sub-second")))
++
++		assert.NotNil(t, FindUser(oidcLogin("ldapsecond", "sub-first")))
++		assert.Nil(t, FindUser(oidcLogin("ldapsecond", "sub-second")))
++	})
++	t.Run("SkipsDefaultAdmin", func(t *testing.T) {
++		assert.False(t, (&User{ID: 1, UserName: "admin"}).IsUnlinkedLdap())
++	})
++}
++
++func TestUser_EnsureUserBasePath(t *testing.T) {
++	t.Run("UserGetsOwnFolder", func(t *testing.T) {
++		m := User{UserName: "folderuser", UserRole: acl.RoleUser.String()}
++		m.EnsureUserBasePath()
++		assert.Equal(t, "users/folderuser", m.BasePath)
++	})
++	t.Run("KeepsExistingFolder", func(t *testing.T) {
++		m := User{UserName: "folderuser", UserRole: acl.RoleUser.String(), BasePath: "shared"}
++		m.EnsureUserBasePath()
++		assert.Equal(t, "shared", m.BasePath)
++	})
++	t.Run("AdminSeesEverything", func(t *testing.T) {
++		m := User{UserName: "folderadmin", UserRole: acl.RoleAdmin.String()}
++		m.EnsureUserBasePath()
++		assert.Equal(t, "", m.BasePath)
++	})
++}
+diff --git a/internal/entity/ldap_directory_test.go b/internal/entity/ldap_directory_test.go
+new file mode 100644
+index 0000000..73c631f
+--- /dev/null
++++ b/internal/entity/ldap_directory_test.go
+@@ -0,0 +1,17 @@
++package entity
++
++import "errors"
++
++type ldapDirectory struct {
++	passwords map[string]string
++	admins    map[string]bool
++	binds     int
++}
++
++func (d *ldapDirectory) bind(username, password string) (bool, error) {
++	d.binds++
++	if expected, ok := d.passwords[username]; !ok || expected != password {
++		return false, errors.New("invalid credentials")
++	}
++	return d.admins[username], nil
++}

@@ -3,19 +3,17 @@ apps:
     user: photoprism
     command: bin/service.web.sh
     daemon: simple
-    plugs:
-    - network
-    - network-bind
     restart-condition: always
+    start-timeout: 600s
+    restart-delay: 10s
 
   mariadb:
     user: photoprism
     command: bin/service.mariadb.sh
     daemon: simple
-    plugs:
-    - network
-    - network-bind
     restart-condition: always
+    start-timeout: 600s
+    restart-delay: 10s
 
   cli:
     command: bin/cli.sh
@@ -38,7 +36,6 @@ apps:
   restore-post-start:
     command: bin/cli restore-post-start
 
-confinement: strict
 description: AI-Powered Photos App for the Decentralized Web. We are on a mission to protect your freedom and privacy
 grade: stable
 name: photoprism

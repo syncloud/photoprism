@@ -1,6 +1,7 @@
 #!/bin/bash -e
 
 DIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && cd .. && pwd )
+${DIR}/bin/wait-for-configure.sh
 
 set -a
 source /var/snap/photoprism/current/config/photoprism.env

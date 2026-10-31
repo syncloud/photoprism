@@ -18,4 +18,5 @@ ${BUILD_DIR}/bin/exiftool
 ${BUILD_DIR}/bin/photoprism.sh --version
 ${BUILD_DIR}/bin/photoprism.sh users mod --help
 
-grep -aq PHOTOPRISM_LDAP_ENABLED ${BUILD_DIR}/opt/photoprism/bin/photoprism
+grep -aq PHOTOPRISM_OIDC_SOCKET ${BUILD_DIR}/opt/photoprism/bin/photoprism
+grep -aq PHOTOPRISM_LDAP_URI ${BUILD_DIR}/opt/photoprism/bin/photoprism

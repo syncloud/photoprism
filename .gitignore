@@ -1,2 +1,4 @@
 .idea
 *.iml
+test/e2e/node_modules/
+__pycache__/
