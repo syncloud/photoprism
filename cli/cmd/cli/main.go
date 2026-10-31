@@ -28,8 +28,9 @@ func main() {
 
 	cmd.AddCommand(&cobra.Command{
 		Use: "access-change",
-		Run: func(cmd *cobra.Command, args []string) {
-			logger.Warn("access-change is not implemented yet")
+		RunE: func(cmd *cobra.Command, args []string) error {
+			logger.Info("access-change")
+			return installer.New(logger).AccessChange()
 		},
 	})
 

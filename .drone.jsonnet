@@ -1,18 +1,18 @@
 local name = 'photoprism';
-local version = '260305';
-local upstream_source = '260305-fad9d5395';
-local upstream_build = '260303-jammy';
-local platform = '26.04.10';
+local version = '261029';
+local upstream_source = '261029-963b58c50';
+local upstream_build = '261027-resolute';
+local platform = '26.10.02';
 local debian = 'bookworm-slim';
 local python = '3.12-slim-bookworm';
-local go = '1.26';
-local dind = '20.10.21-dind';
-local store_publisher = 'stable-346';
+local go = '1.27.3';
+local playwright = 'mcr.microsoft.com/playwright:v1.48.2-jammy';
+local store_publisher = 'stable-366';
 local distro_default = 'bookworm';
 local distros = ['bookworm', 'buster'];
 
-local platform_image(distro, arch) =
-  'syncloud/platform-' + distro + '-' + arch + ':' + platform;
+local platform_image(distro) =
+  'syncloud/platform-' + distro + ':' + platform;
 
 local build(arch, test_ui) = [{
   kind: 'pipeline',
@@ -24,13 +24,6 @@ local build(arch, test_ui) = [{
   },
   steps: [
     {
-      name: 'version',
-      image: 'debian:' + debian,
-      commands: [
-        'echo $DRONE_BUILD_NUMBER > version',
-      ],
-    },
-    {
       name: 'mariadb',
       image: 'linuxserver/mariadb:10.5.16-alpine',
       commands: [
@@ -40,7 +33,7 @@ local build(arch, test_ui) = [{
   ] + [
     {
       name: 'mariadb test ' + distro,
-      image: platform_image(distro, arch),
+      image: platform_image(distro),
       commands: [
         './mariadb/test.sh',
       ],
@@ -67,7 +60,7 @@ local build(arch, test_ui) = [{
   ] + [
     {
       name: 'photoprism test ' + distro,
-      image: platform_image(distro, arch),
+      image: platform_image(distro),
       commands: [
         './photoprism/test.sh',
       ],
@@ -77,82 +70,37 @@ local build(arch, test_ui) = [{
     {
       name: 'cli',
       image: 'golang:' + go,
-      commands: [
-        'cd cli',
-        'mkdir -p ../build/snap/meta/hooks ../build/snap/bin',
-        'CGO_ENABLED=0 go build -buildvcs=false -o ../build/snap/meta/hooks/install ./cmd/install',
-        'CGO_ENABLED=0 go build -buildvcs=false -o ../build/snap/meta/hooks/configure ./cmd/configure',
-        'CGO_ENABLED=0 go build -buildvcs=false -o ../build/snap/meta/hooks/pre-refresh ./cmd/pre-refresh',
-        'CGO_ENABLED=0 go build -buildvcs=false -o ../build/snap/meta/hooks/post-refresh ./cmd/post-refresh',
-        'CGO_ENABLED=0 go build -buildvcs=false -o ../build/snap/bin/cli ./cmd/cli',
-      ],
+      commands: ['./cli/build.sh'],
     },
     {
       name: 'package',
       image: 'debian:' + debian,
-      commands: [
-        'VERSION=$(cat version)',
-        './package.sh ' + name + ' $VERSION ',
-      ],
+      commands: ['./package.sh ' + name + ' $DRONE_BUILD_NUMBER'],
     },
   ] + [
     {
       name: 'test ' + distro,
       image: 'python:' + python,
-      commands: [
-        'cd test',
-        './deps.sh',
-        'py.test -x -s test.py --distro=' + distro + ' --ver=$DRONE_BUILD_NUMBER --app=' + name,
-      ],
+      commands: ['./ci/test.sh test.py ' + distro + ' ' + name],
     }
     for distro in distros
   ] + (if test_ui then [
          {
            name: 'e2e',
-           image: 'mcr.microsoft.com/playwright:v1.48.2-jammy',
-           environment: {
-             PLAYWRIGHT_FULL_DOMAIN: distro_default + '.com',
-             PLAYWRIGHT_APP_DOMAIN: name + '.' + distro_default + '.com',
-             PLAYWRIGHT_DEVICE_HOST: name + '.' + distro_default + '.com',
-             PLAYWRIGHT_DEVICE_USER: 'user',
-             PLAYWRIGHT_DEVICE_PASSWORD: 'Password1',
-             PLAYWRIGHT_ARTIFACT_DIR: '/drone/src/artifact/e2e',
-           },
-           commands: [
-             'apt-get update -qq && apt-get install -y -qq sshpass openssh-client curl',
-             'cd test/e2e',
-             'npm ci --no-audit --no-fund',
-             'npx playwright test --project=desktop',
-           ],
+           image: playwright,
+           commands: ['./test/e2e/run.sh e2e'],
          },
        ] else []) + [
     {
       name: 'test-upgrade',
       image: 'python:' + python,
-      commands: [
-        'cd test',
-        './deps.sh',
-        'py.test -x -s upgrade.py --distro=' + distro_default + ' --ver=$DRONE_BUILD_NUMBER --app=' + name,
-      ],
+      commands: ['./ci/test.sh upgrade.py ' + distro_default + ' ' + name],
     },
   ] + (if test_ui then [
          {
            name: 'e2e-after-upgrade',
-           image: 'mcr.microsoft.com/playwright:v1.48.2-jammy',
-           environment: {
-             PLAYWRIGHT_FULL_DOMAIN: distro_default + '.com',
-             PLAYWRIGHT_APP_DOMAIN: name + '.' + distro_default + '.com',
-             PLAYWRIGHT_DEVICE_HOST: name + '.' + distro_default + '.com',
-             PLAYWRIGHT_DEVICE_USER: 'user',
-             PLAYWRIGHT_DEVICE_PASSWORD: 'Password1',
-             PLAYWRIGHT_ARTIFACT_DIR: '/drone/src/artifact/e2e-after-upgrade',
-           },
-           commands: [
-             'apt-get update -qq && apt-get install -y -qq sshpass openssh-client curl',
-             'cd test/e2e',
-             'npm ci --no-audit --no-fund',
-             'npx playwright test --project=desktop',
-           ],
+           image: playwright,
+           commands: ['./test/e2e/run.sh e2e-after-upgrade'],
          },
        ] else []) + [
     {
@@ -191,18 +139,8 @@ local build(arch, test_ui) = [{
   },
   services: [
     {
-      name: 'docker',
-      image: 'docker:' + dind,
-      privileged: true,
-      volumes: [{
-        name: 'dockersock',
-        path: '/var/run',
-      }],
-    },
-  ] + [
-    {
       name: name + '.' + distro + '.com',
-      image: platform_image(distro, arch),
+      image: platform_image(distro),
       privileged: true,
       entrypoint: ['/bin/sh', '-c', "mkdir -p /etc/systemd/system/snapd.service.d && printf '[Service]\\nExecStartPost=/bin/sh -c \"/usr/bin/snap set system refresh.hold=2099-01-01T00:00:00Z\"\\n' > /etc/systemd/system/snapd.service.d/disable-refresh.conf && exec /sbin/init"],
       volumes: [
@@ -215,7 +153,6 @@ local build(arch, test_ui) = [{
   volumes: [
     { name: 'dbus', host: { path: '/var/run/dbus' } },
     { name: 'dev', host: { path: '/dev' } },
-    { name: 'dockersock', temp: {} },
   ],
 }];
 

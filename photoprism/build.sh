@@ -13,6 +13,6 @@ cp -r /lib ${BUILD_DIR}
 cp -r /opt ${BUILD_DIR}
 
 mv ${BUILD_DIR}/bin/exiftool ${BUILD_DIR}/bin/exiftool.orig
-cp -r ${DIR}/bin/* ${BUILD_DIR}/bin
+cp -r --remove-destination ${DIR}/bin/* ${BUILD_DIR}/bin
 cp lib/*-linux*/ld-*.so* ${BUILD_DIR}/lib/ld.so
 ls -la

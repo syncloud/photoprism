@@ -8,14 +8,13 @@ import (
 	"github.com/syncloud/golib/platform"
 	"go.uber.org/zap"
 	"os"
+	"os/exec"
 	"path"
 )
 
 const App = "photoprism"
-
-type Variables struct {
-	DataDir string
-}
+const OIDCRedirect = "/api/v1/oidc/redirect"
+const AuthSocket = "/var/snap/platform/current/authelia.socket"
 
 type Installer struct {
 	newVersionFile     string
@@ -78,7 +77,12 @@ func (i *Installer) Install() error {
 }
 
 func (i *Installer) Configure() error {
-	err := i.database.createDb()
+	err := i.UpdateConfigs()
+	if err != nil {
+		return err
+	}
+
+	err = i.database.createDb()
 	if err != nil {
 		return err
 	}
@@ -173,17 +177,23 @@ func (i *Installer) StorageChange() error {
 		return err
 	}
 
-	err = linux.CreateMissingDirs(
+	dirs := []string{
 		path.Join(storageDir, "photos"),
 		path.Join(storageDir, "photos", "import"),
-	)
+	}
+	err = linux.CreateMissingDirs(dirs...)
 	if err != nil {
 		return err
 	}
 
-	err = linux.Chown(storageDir, App)
+	return chownDirs(App, dirs...)
+}
+
+func chownDirs(user string, dirs ...string) error {
+	args := append([]string{fmt.Sprintf("%s:%s", user, user)}, dirs...)
+	output, err := exec.Command("chown", args...).CombinedOutput()
 	if err != nil {
-		return err
+		return fmt.Errorf("%w: %s", err, string(output))
 	}
 	return nil
 }
@@ -197,11 +207,41 @@ func (i *Installer) UpdateVersion() error {
 }
 
 func (i *Installer) UpdateConfigs() error {
-	return config.Generate(
+	secret, err := i.platformClient.RegisterOIDCClient(App, []string{OIDCRedirect}, true, "client_secret_basic")
+	if err != nil {
+		return fmt.Errorf("oidc register: %w", err)
+	}
+	authUrl, err := i.platformClient.GetAppUrl("auth")
+	if err != nil {
+		return err
+	}
+	appUrl, err := i.platformClient.GetAppUrl(App)
+	if err != nil {
+		return err
+	}
+	err = config.Generate(
 		path.Join(i.appDir, "config"),
 		path.Join(i.dataDir, "config"),
-		Variables{DataDir: i.dataDir},
+		Variables{
+			DataDir:      i.dataDir,
+			AppUrl:       appUrl,
+			AuthUrl:      authUrl,
+			AuthSocket:   AuthSocket,
+			ClientSecret: secret,
+		},
 	)
+	if err != nil {
+		return fmt.Errorf("generate config: %w", err)
+	}
+	return linux.Chown(i.configDir, App)
+}
+
+func (i *Installer) AccessChange() error {
+	err := i.UpdateConfigs()
+	if err != nil {
+		return err
+	}
+	return i.platformClient.RestartService(fmt.Sprintf("%s.web", App))
 }
 
 func (i *Installer) BackupPreStop() error {

@@ -5,6 +5,10 @@ IMAGES_DIR = join(DIR, 'images')
 ORIGINALS = '/data/photoprism/photos/originals'
 THUMBNAILS = '/data/photoprism/cache/thumbnails'
 REGULAR_PASSWORD = 'regularpass123'
+SPACE_USER = 'spaceuser'
+MIGRATED_USER = 'regularuser1'
+NEW_USER = 'regularuser2'
+SPACE_PASSWORD = ' space pass123 '
 
 ADMIN_IMAGES = ('admin-1.jpg', 'admin-2.jpg')
 USER_IMAGES = (
@@ -22,6 +26,10 @@ def add_regular_users(device):
             'snap run platform.cli user add {0} --password={1}'.format(user, REGULAR_PASSWORD),
             throw=False,
         )
+    device.run_ssh(
+        "snap run platform.cli user add {0} --password='{1}'".format(SPACE_USER, SPACE_PASSWORD),
+        throw=False,
+    )
 
 
 def seed_multi_user_photos(device, images_dir=IMAGES_DIR):

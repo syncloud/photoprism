@@ -3,7 +3,7 @@ module hooks
 require (
 	github.com/otiai10/copy v1.14.0
 	github.com/spf13/cobra v1.8.1
-	github.com/syncloud/golib v1.1.18
+	github.com/syncloud/golib v1.1.22
 	go.uber.org/zap v1.27.0
 )
 

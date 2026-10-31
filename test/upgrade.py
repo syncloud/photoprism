@@ -10,8 +10,10 @@ from syncloudlib.integration.installer import local_install
 from syncloudlib.http import wait_for_rest
 
 import seed
+import sso
 
 DIR = dirname(__file__)
+LDAP_ACCOUNTS = {}
 TMP_DIR = '/tmp/syncloud'
 IMPORT_DIR = '/data/photoprism/photos/import'
 
@@ -26,6 +28,9 @@ PRE_UPGRADE_IMAGES = [
 def module_setup(request, device, artifact_dir):
     def module_teardown():
         device.run_ssh('journalctl > {0}/refresh.journalctl.log'.format(TMP_DIR), throw=False)
+        device.run_ssh('journalctl -u snap.photoprism.web > {0}/photoprism.web.journal.log'.format(TMP_DIR), throw=False)
+        device.run_ssh('journalctl -u snap.platform.authelia > {0}/authelia.journal.log'.format(TMP_DIR), throw=False)
+        device.run_ssh("snap run photoprism.sql photoprism --execute 'select * from auth_users\\G' > {0}/auth_users.log".format(TMP_DIR), throw=False)
         device.scp_from_device('{0}/*'.format(TMP_DIR), artifact_dir)
         run('cp /videos/* {0}'.format(artifact_dir), shell=True)
         check_output('chmod -R a+r {0}'.format(artifact_dir), shell=True)
@@ -46,6 +51,19 @@ def test_install_from_store(device, app_domain):
     wait_for_rest(requests.session(), "https://{0}".format(app_domain), 200, 100)
 
 
+def test_ldap_sign_in_before_upgrade(device, app_domain, device_user, device_password):
+    seed.add_regular_users(device)
+    for user, password in ((device_user, device_password), (seed.MIGRATED_USER, seed.REGULAR_PASSWORD)):
+        response = sso.api_login(app_domain, user, password)
+        assert response.status_code == 200, response.text
+        LDAP_ACCOUNTS[user] = response.json()['user']['UID']
+    sso.set_provider(device, device_user, 'default')
+    stored = sso.accounts(device)
+    for user, uid in LDAP_ACCOUNTS.items():
+        assert stored[user]['uid'] == uid, stored
+    assert stored[device_user]['provider'] == 'default', stored
+
+
 def test_seed_pictures_before_upgrade(device):
     _generate_random_png(join(DIR, 'images/generated-big.png'), 1000, 1000)
     for path, _ in PRE_UPGRADE_IMAGES:
@@ -62,6 +80,35 @@ def test_upgrade(device, device_host, device_password, app_archive_path, app_dom
     device.run_ssh('journalctl --vacuum-time=1s', throw=False)
     local_install(device_host, device_password, app_archive_path)
     wait_for_rest(requests.session(), "https://{0}".format(app_domain), 200, 100)
+
+
+def test_ldap_accounts_keep_their_ids_with_oidc(device, app_domain, domain, device_user, device_password):
+    for user, password in ((device_user, device_password), (seed.MIGRATED_USER, seed.REGULAR_PASSWORD)):
+        sso.sso_login(app_domain, 'auth.{0}'.format(domain), user, password)
+    stored = sso.accounts(device)
+    for user, uid in LDAP_ACCOUNTS.items():
+        assert stored[user]['uid'] == uid, stored
+        assert stored[user]['provider'] == 'oidc', stored
+    assert [name for name in stored if name.startswith(seed.MIGRATED_USER)] == [seed.MIGRATED_USER], stored
+    assert stored[device_user]['super_admin'] == '1', stored
+    assert stored[seed.MIGRATED_USER]['role'] == 'user', stored
+    assert stored[seed.MIGRATED_USER]['base_path'] == 'users/{0}'.format(seed.MIGRATED_USER), stored
+
+
+def test_oidc_registers_user_without_ldap_account(device, app_domain, domain):
+    user = seed.NEW_USER
+    sso.sso_login(app_domain, 'auth.{0}'.format(domain), user, seed.REGULAR_PASSWORD)
+    stored = sso.accounts(device)
+    assert stored[user]['provider'] == 'oidc', stored
+    assert stored[user]['role'] == 'user', stored
+    assert stored[user]['base_path'] == 'users/{0}'.format(user), stored
+
+
+def test_syncloud_password_signs_in_through_api_to_the_same_account(app_domain, device_user, device_password):
+    for user, password in ((device_user, device_password), (seed.MIGRATED_USER, seed.REGULAR_PASSWORD)):
+        response = sso.api_login(app_domain, user, password)
+        assert response.status_code == 200, response.text
+        assert response.json()['user']['UID'] == LDAP_ACCOUNTS[user], response.text
 
 
 def test_pictures_visible_after_upgrade(device):

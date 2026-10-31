@@ -14,8 +14,11 @@ tar xf ${UPSTREAM_TAG}.tar.gz
 mv photoprism-${UPSTREAM_TAG} photoprism-src
 
 cd photoprism-src
-patch -p1 < ${DIR}/ldap.patch
+patch -p1 < ${DIR}/syncloud.patch
 make dep-tensorflow
+go test ./internal/auth/acl/...
+go test ./internal/auth/oidc/ -run 'TestSocketTransport|TestHttpClient'
+go test ./internal/entity/ -run 'TestAuthLdap|TestLinkLdapUser|TestUser_EnsureUserBasePath'
 make build-go
 
 cp photoprism ${BUILD_DIR}/opt/photoprism/bin/photoprism
