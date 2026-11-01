@@ -24,6 +24,13 @@ local build(arch, test_ui) = [{
   },
   steps: [
     {
+      name: 'version',
+      image: 'debian:' + debian,
+      commands: [
+        'echo $DRONE_BUILD_NUMBER > version',
+      ],
+    },
+    {
       name: 'mariadb',
       image: 'linuxserver/mariadb:10.5.16-alpine',
       commands: [
